@@ -3,6 +3,23 @@
 A native macOS app that visualises your Cubase external devices (instruments, FX, sends)
 as a live patchbay, reading directly from Cubase's `External Plugins.xml` preference file.
 
+## Screenshots
+
+**Cards** — every external device Cubase knows about, grouped by type, with its
+channels, stereo/mono format and MIDI assignment.
+
+![Cards view](docs/screenshots/cards.webp)
+
+**Patchbay** — the whole channel space laid out per converter/interface, the OUT
+row above the IN row, colour-coded by device type. Unused channels stay dimmed.
+
+![Patchbay view](docs/screenshots/patchbay.webp)
+
+**Converters & Interfaces** — map each converter to its channel range; the
+physical ports are auto-detected from Cubase's `Port Setup.xml`.
+
+![Converters and interfaces](docs/screenshots/converters.webp)
+
 ## Features
 
 - **Auto-detects all Cubase versions** — scans `~/Library/Preferences/Cubase NN/`
