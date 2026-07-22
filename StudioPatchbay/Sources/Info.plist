@@ -23,7 +23,7 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2025 Jan Nordus. All rights reserved.</string>
+	<string>Copyright © 2026 Painfilter Software &amp; Music Production</string>
 	<key>NSMainWindowRestoration</key>
 	<true/>
 	<key>NSPrincipalClass</key>
