@@ -67,8 +67,7 @@ issues and PRs.
 
 ## Acknowledgments
 
-Open-sourcing, packaging, and the macOS 15 compatibility pass were done with
-[Claude Code](https://claude.com/claude-code).
+StudioPatchbay was designed and built with [Claude Code](https://claude.com/claude-code).
 
 ## About
 
