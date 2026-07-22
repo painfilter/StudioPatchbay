@@ -15,6 +15,12 @@ row above the IN row, colour-coded by device type. Unused channels stay dimmed.
 
 ![Patchbay view](docs/screenshots/patchbay.webp)
 
+**Detail panel** — click any card or channel cell to trace that device's whole
+signal flow: out of the Cubase track, through the converter and interface, and
+back in — plus its format, MIDI device and channel assignments.
+
+![Detail panel with signal flow](docs/screenshots/signal-flow.webp)
+
 **Converters & Interfaces** — map each converter to its channel range; the
 physical ports are auto-detected from Cubase's `Port Setup.xml`.
 
