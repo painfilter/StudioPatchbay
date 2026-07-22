@@ -65,6 +65,11 @@ MIT — see [LICENSE](LICENSE). Free to use, modify and share. Contributions are
 welcome; this is a casually maintained side project, so please be patient with
 issues and PRs.
 
+## Acknowledgments
+
+Open-sourcing, packaging, and the macOS 15 compatibility pass were done with
+[Claude Code](https://claude.com/claude-code).
+
 ## About
 
 StudioPatchbay is open-source studio tooling from **Painfilter Software & Music
