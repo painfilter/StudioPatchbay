@@ -282,7 +282,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleName = "Studio Patchbay";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Jan Nordus";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Painfilter Software & Music Production";
 				INFOPLIST_KEY_NSMainWindowRestoration = YES;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -309,7 +309,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleName = "Studio Patchbay";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Jan Nordus";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Painfilter Software & Music Production";
 				INFOPLIST_KEY_NSMainWindowRestoration = YES;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
