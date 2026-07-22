@@ -10,7 +10,7 @@
 # "Developer ID Application" certificate — override with the DEV_ID_APP / TEAM
 # env vars if you have more than one. Notarisation uses a keychain profile,
 # set once (no password lives in this script):
-#   xcrun notarytool store-credentials "studiopatchbay-notary" \
+#   xcrun notarytool store-credentials "hardwarerecall-notary" \
 #       --apple-id "YOUR_APPLE_ID_EMAIL" \
 #       --team-id  "YOUR_TEAM_ID" \
 #       --password "the-app-specific-password"
@@ -24,7 +24,7 @@ SCHEME="StudioPatchbay"
 DEV_ID_APP="${DEV_ID_APP:-$(security find-identity -v -p codesigning 2>/dev/null \
     | grep -m1 'Developer ID Application:' | sed -E 's/^[^"]*"([^"]*)".*/\1/')}"
 TEAM="${TEAM:-$(printf '%s' "${DEV_ID_APP}" | sed -E 's/.*\(([A-Z0-9]+)\)$/\1/')}"
-NOTARY_PROFILE="${NOTARY_PROFILE:-studiopatchbay-notary}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-hardwarerecall-notary}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$SCRIPT_DIR/.." && pwd)"
