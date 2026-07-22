@@ -10,6 +10,20 @@ struct ScrollRequest: Equatable {
     let token: Int
 }
 
+/// Hides the automatic Liquid Glass shared background on macOS 26+; a no-op on
+/// earlier macOS (there is no shared glass to hide), so the toolbar degrades
+/// gracefully below Tahoe.
+private extension ToolbarContent {
+    @ToolbarContentBuilder
+    func hidingSharedBackgroundIfAvailable() -> some ToolbarContent {
+        if #available(macOS 26.0, *) {
+            self.sharedBackgroundVisibility(.hidden)
+        } else {
+            self
+        }
+    }
+}
+
 /// A single point in jump history — just enough to restore "where you were":
 /// which top-level view, and which channel (if any) was last scrolled to. The
 /// device detail panel itself doesn't change during a jump (only view mode and
@@ -350,7 +364,7 @@ struct ContentView: View {
             .background(Color.primary.opacity(0.06), in: Capsule())
             .fixedSize()
         }
-        .sharedBackgroundVisibility(.hidden)
+        .hidingSharedBackgroundIfAvailable()
 
         // Watch status
         // This is the leading-most item in the auto-merged "Updated / Refresh / Zoom"
@@ -411,7 +425,10 @@ struct ContentView: View {
 
         // Fixed gap so the picker capsule isn't crammed against the zoom controls —
         // without this, the picker's left edge sat almost flush against "Reset".
-        ToolbarSpacer(.fixed, placement: .automatic)
+        // (macOS 26 Liquid Glass toolbar only; earlier macOS uses default spacing.)
+        if #available(macOS 26.0, *) {
+            ToolbarSpacer(.fixed, placement: .automatic)
+        }
 
         // View picker
         ToolbarItem(placement: .automatic) {

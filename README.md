@@ -22,9 +22,11 @@ as a live patchbay, reading directly from Cubase's `External Plugins.xml` prefer
 
 ## Requirements
 
-- macOS 26.0 (Tahoe) or later — required for the Liquid Glass toolbar APIs
-  (`sharedBackgroundVisibility`, `ToolbarSpacer`) used in the toolbar
-- Xcode 15 or later
+- **Runs on macOS 15 (Sequoia) or later.** On macOS 26 (Tahoe) the toolbar uses
+  the Liquid Glass APIs (`sharedBackgroundVisibility`, `ToolbarSpacer`); on
+  earlier macOS it falls back to the standard toolbar automatically.
+- **Builds with Xcode 26 or later** — the macOS 26 SDK is needed to compile the
+  availability-guarded Liquid Glass code (it still runs on macOS 15+).
 - Cubase 12 or later (any version that writes `External Plugins.xml`)
 
 ## Build & Run
