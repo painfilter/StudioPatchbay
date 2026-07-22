@@ -50,6 +50,7 @@ rm -rf "$BUILD"; mkdir -p "$BUILD" "$DIST"
 # ---- 1. Archive (Release, hardened runtime) --------------------------------
 say "Archiving (Release)"
 xcodebuild -project StudioPatchbay.xcodeproj -scheme "$SCHEME" -configuration Release \
+    -destination 'generic/platform=macOS' \
     -archivePath "$ARCHIVE" archive \
     -allowProvisioningUpdates \
     DEVELOPMENT_TEAM="$TEAM" \
