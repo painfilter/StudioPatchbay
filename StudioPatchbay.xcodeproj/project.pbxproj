@@ -12,6 +12,7 @@
 		A100000003 /* CubaseDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000003 /* CubaseDetector.swift */; };
 		A100000004 /* ExternalPluginsParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000004 /* ExternalPluginsParser.swift */; };
 		A100000005 /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000005 /* Views.swift */; };
+		A100000011 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000011 /* DesignSystem.swift */; };
 		A100000006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A200000006 /* Assets.xcassets */; };
 		A100000007 /* ControlRoomParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000007 /* ControlRoomParser.swift */; };
 		A100000008 /* PortSetupParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000008 /* PortSetupParser.swift */; };
@@ -25,6 +26,7 @@
 		A200000003 /* CubaseDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CubaseDetector.swift; sourceTree = "<group>"; };
 		A200000004 /* ExternalPluginsParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalPluginsParser.swift; sourceTree = "<group>"; };
 		A200000005 /* Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views.swift; sourceTree = "<group>"; };
+		A200000011 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		A200000006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A200000007 /* ControlRoomParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlRoomParser.swift; sourceTree = "<group>"; };
 		A200000008 /* PortSetupParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortSetupParser.swift; sourceTree = "<group>"; };
@@ -59,6 +61,7 @@
 				A200000003 /* CubaseDetector.swift */,
 				A200000004 /* ExternalPluginsParser.swift */,
 				A200000005 /* Views.swift */,
+				A200000011 /* DesignSystem.swift */,
 				A200000006 /* Assets.xcassets */,
 				A200000007 /* ControlRoomParser.swift */,
 				A200000008 /* PortSetupParser.swift */,
@@ -148,6 +151,7 @@
 				A100000003 /* CubaseDetector.swift in Sources */,
 				A100000004 /* ExternalPluginsParser.swift in Sources */,
 				A100000005 /* Views.swift in Sources */,
+				A100000011 /* DesignSystem.swift in Sources */,
 				A100000007 /* ControlRoomParser.swift in Sources */,
 				A100000008 /* PortSetupParser.swift in Sources */,
 				A100000009 /* PhysicalDeviceSettingsView.swift in Sources */,
@@ -277,7 +281,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -290,7 +294,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nordus.StudioPatchbay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -304,7 +308,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -317,7 +321,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nordus.StudioPatchbay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

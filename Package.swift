@@ -19,6 +19,7 @@ let package = Package(
                 "Assets.xcassets",
                 "StudioPatchbayApp.swift",
                 "ContentView.swift",
+                "DesignSystem.swift",
                 "Views.swift",
                 "PhysicalDeviceSettingsView.swift",
                 "PatchbayExporter.swift",

@@ -216,7 +216,7 @@ struct CardsView: View {
 
     private func sectionHeader(_ title: String, count: Int, color: Color) -> some View {
         HStack(spacing: 8) {
-            Text(title).font(.callout.weight(.semibold)).foregroundStyle(color)
+            Text(title).panelLabel(color)
             Text("\(count)").font(.caption.monospaced())
                 .padding(.horizontal, 6).padding(.vertical, 1)
                 .background(.quaternary, in: Capsule()).foregroundStyle(.secondary)
@@ -807,7 +807,7 @@ struct AudioInterfaceSectionView: View {
     private var sectionHeader: some View {
         HStack(spacing: 8) {
             Image(systemName: "cpu").font(.caption).foregroundStyle(.secondary)
-            Text("Audio Interfaces").font(.caption.weight(.semibold))
+            Text("Audio Interfaces").panelLabel(.primary)
             Text("·  Standalone devices, separate from the RME's own port map")
                 .font(.caption2).foregroundStyle(.secondary)
             Spacer()
@@ -865,7 +865,7 @@ struct ControlRoomInPatchbaySection: View {
     private var sectionHeader: some View {
         HStack(spacing: 8) {
             Image(systemName: "dial.high.fill").font(.caption).foregroundStyle(.secondary)
-            Text("Control Room").font(.caption.weight(.semibold))
+            Text("Control Room").panelLabel(.primary)
             Text("·  Monitor bus outputs, downstream of the interfaces and converters above")
                 .font(.caption2).foregroundStyle(.secondary)
             Spacer()
@@ -1557,8 +1557,8 @@ struct DeviceDetailView: View {
     }
 
     private func sectionTitle(_ text: String) -> some View {
-        Text(text).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            .textCase(.uppercase).tracking(0.5)
+        // This treatment started here and is now the shared rule, see PF.panelLabel.
+        Text(text).panelLabel()
     }
 
     private var infoGrid: some View {

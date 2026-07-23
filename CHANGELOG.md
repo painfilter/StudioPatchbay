@@ -4,15 +4,26 @@ Notable changes to StudioPatchbay. Dates are release dates.
 
 ## Unreleased
 
+## 1.1 - 2026-07-23
+
+Nothing about how the app reads Cubase changed in this release. It is tests,
+wording and typography.
+
 ### Added
 - Tests for the parsing layer (41 cases covering `ExternalPluginsParser`,
   `PortSetupParser` and `ControlRoomParser`), runnable with `swift test` without
-  building the app.
-- CI on every push, running the parser tests.
+  building the app. The parsers read a format Steinberg controls, so this is
+  regression cover for the part most likely to break without anyone touching
+  this repository.
+- CI on every push, running the parser tests and building the app.
 - `CONTRIBUTING.md` and issue templates, aimed at getting a redacted XML snippet
   with parsing reports, since that is what makes them fixable.
 
 ### Changed
+- Section labels now share one treatment across the whole app: small, uppercase
+  and letterspaced, reading as annotation on a technical drawing rather than as
+  headlines competing with the data. This is the lettering idiom used by
+  HardwareRecall, the other tool in the same family.
 - Wording throughout the interface reads more plainly.
 - An unknown device format now reads "Unknown" instead of a bare dash.
 
