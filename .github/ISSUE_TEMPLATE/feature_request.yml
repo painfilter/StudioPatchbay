@@ -1,0 +1,34 @@
+name: Feature request
+description: Suggest something the app should do
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The app deliberately does one thing: show what Cubase already knows about
+        your external devices. Suggestions that keep it in that lane are the most
+        likely to happen.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The situation in your studio, rather than the feature itself. It often has a simpler answer than the one that comes to mind first.
+      placeholder: "When I patch a new synth I have to check three places to find a free channel pair."
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What did you have in mind?
+      validations:
+        required: false
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This reads from what Cubase already knows, rather than asking me to maintain a separate list by hand
+          required: false

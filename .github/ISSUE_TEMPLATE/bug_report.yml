@@ -1,0 +1,64 @@
+name: Bug report
+description: Something is wrong, missing or misread
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The app reads files Cubase writes, and those files vary by Cubase
+        version, audio driver and interface. Only one studio's setup has been
+        tested directly, so details about yours are the most valuable part of a
+        report.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what the app showed instead.
+      placeholder: |
+        Expected my ADAT converter to appear as one port at ch 33-48.
+        The app split it into two ports instead.
+    validations:
+      required: true
+
+  - type: input
+    id: cubase
+    attributes:
+      label: Cubase version
+      placeholder: "Cubase 14.0.20"
+    validations:
+      required: true
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "macOS 15.4"
+    validations:
+      required: true
+
+  - type: input
+    id: interface
+    attributes:
+      label: Audio interface and driver
+      description: Which interface, and whether Cubase uses its ASIO driver or plain CoreAudio.
+      placeholder: "RME HDSPe MADI FX, ASIO driver"
+    validations:
+      required: true
+
+  - type: textarea
+    id: xml
+    attributes:
+      label: File snippet
+      description: |
+        For anything about devices, channels or ports, this is what actually
+        makes the bug fixable. Usually from
+        `~/Library/Preferences/Cubase NN/External Plugins.xml`, or
+        `Port Setup.xml` for converter and channel-number problems.
+
+        Redact device names freely, the parser does not read them. Please keep
+        the structure intact: element nesting, attribute names, and the shape of
+        `Connections` and `SysName` values. That structure is usually the answer.
+      render: xml
+    validations:
+      required: false

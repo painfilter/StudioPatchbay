@@ -127,7 +127,7 @@ struct InstallationRowView: View {
 
     private var dotFill: Color    { isSelected ? .green : .clear }
     private var dotBorder: Color  { isSelected ? .green : Color.secondary.opacity(0.4) }
-    private var subText: String   { inst.xmlExists ? "External Plugins.xml found" : "No XML — launch Cubase first" }
+    private var subText: String   { inst.xmlExists ? "External Plugins.xml found" : "No XML yet, launch Cubase first" }
     private var subColor: Color   { inst.xmlExists ? .secondary : .red }
 
     var body: some View {
@@ -568,7 +568,7 @@ struct PatchbayView: View {
     private var noDevicesBanner: some View {
         HStack(spacing: 10) {
             Image(systemName: "cable.connector.slash").foregroundStyle(.orange)
-            Text("No converters or interfaces configured yet — channels below show without physical device grouping until you add some in Settings.")
+            Text("No converters or interfaces configured yet. Channels below show without physical device grouping until you add some in Settings.")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
@@ -1501,7 +1501,7 @@ struct DeviceDetailView: View {
         if device.allChannels.count > 2 { return "\(device.allChannels.count)-channel" }
         if device.isStereo { return "Stereo" }
         if device.isMono   { return "Mono" }
-        return "—"
+        return "Unknown"
     }
 
     var body: some View {
@@ -1643,7 +1643,7 @@ struct SignalFlowView: View {
         let channels: [Int]
         let direction: ChannelDirection
         var physicalLabel: String { device.physicalRangeLabel(for: channels, direction: direction) ?? "" }
-        var fullLabel: String { "\(device.name)  —  \(physicalLabel)" }
+        var fullLabel: String { "\(device.name)  ·  \(physicalLabel)" }
     }
 
     private func deviceIOs(for channels: [Int], direction: ChannelDirection) -> [PhysicalDeviceIO] {
@@ -1709,14 +1709,14 @@ struct SignalFlowView: View {
             let note = recvIOs.isEmpty ? "  ·  no converter/interface configured" : ""
             flowNode(icon: "↓", label: "\(recvInterface)  •  Ch \(recvChStr)\(note)", color: .blue, jumpChannel: device.recvChannels.first)
             flowArrow
-            flowNode(icon: "🖥", label: "Cubase — received", color: .primary)
+            flowNode(icon: "🖥", label: "Cubase (received)", color: .primary)
         }
     }
 
     private var sendOnlyFlow: some View {
         let note = sendIOs.isEmpty ? "  ·  no converter/interface configured" : ""
         return VStack(spacing: 2) {
-            flowNode(icon: "🖥", label: "Cubase — sent", color: .primary)
+            flowNode(icon: "🖥", label: "Cubase (sent)", color: .primary)
             flowArrow
             flowNode(icon: "↑", label: "\(sendInterface)  •  Ch \(sendChStr)\(note)", color: .purple, jumpChannel: device.sendChannels.first)
             ForEach(sendIOs, id: \.device.id) { cio in
@@ -1968,7 +1968,7 @@ struct EmptyStateView: View {
             return "No Cubase installations detected in ~/Library/Preferences.\nMake sure Cubase has been launched at least once."
         }
         let names = installations.map(\.displayName).joined(separator: ", ")
-        return "Found \(names) but External Plugins.xml is missing.\nOpen Cubase, configure at least one external device, then quit — Cubase writes the file on exit."
+        return "Found \(names) but External Plugins.xml is missing.\nOpen Cubase, configure at least one external device, then quit. Cubase writes the file on exit."
     }
 
     var body: some View {

@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The parsing layer is what breaks when Steinberg changes a preference file,
+  # and it builds without a GUI, so this is the job that must stay green.
+  parsers:
+    name: Parser tests
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show toolchain
+        run: swift --version
+      - name: Test
+        run: swift test
+
+  # The app target needs the macOS 26 SDK for the availability-guarded Liquid
+  # Glass toolbar APIs. Hosted runners do not always carry that Xcode yet, so a
+  # failure here means "could not verify on this runner", not "the app is
+  # broken". It stays non-blocking until the runner images catch up.
+  app:
+    name: App build (best effort)
+    runs-on: macos-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show available Xcode versions
+        run: ls /Applications | grep -i xcode || true
+      - name: Build
+        run: |
+          xcodebuild -project StudioPatchbay.xcodeproj \
+            -scheme StudioPatchbay \
+            -configuration Debug \
+            -destination 'generic/platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            build

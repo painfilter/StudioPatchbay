@@ -58,13 +58,13 @@ struct PhysicalDeviceSettingsView: View {
                 pendingDelete = nil
             }
         } message: {
-            Text("This only removes it from the app's display — it doesn't change anything in Cubase.")
+            Text("This only removes it from the app's display. It doesn't change anything in Cubase.")
         }
         .alert("Remove all converters and interfaces?", isPresented: $pendingRemoveAll) {
             Button("Cancel", role: .cancel) { }
             Button("Remove All", role: .destructive) { state.replaceAllPhysicalDevices(with: []) }
         } message: {
-            Text("This clears your entire list. Consider exporting a backup first — this can't be undone.")
+            Text("This clears your entire list and can't be undone. Consider exporting a backup first.")
         }
         .sheet(item: $pendingImportReview) { review in
             ImportReviewView(
@@ -292,7 +292,7 @@ struct PhysicalDeviceSettingsView: View {
             Text("Detected Physical Ports")
                 .font(.callout.weight(.semibold))
                 .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 4)
-            Text("Auto-detected from Port Setup.xml — for reference while entering channel numbers below.")
+            Text("Auto-detected from Port Setup.xml, for reference while entering channel numbers below.")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 12).padding(.bottom, 6)
@@ -309,7 +309,7 @@ struct PhysicalDeviceSettingsView: View {
                     .padding(.top, 20)
             } else {
                 if hasApproximatePorts {
-                    Label("* Approximate — this interface uses plain CoreAudio rather than ASIO, so Cubase's Port Setup.xml has no real channel numbers for it. Numbering below is a best guess (sequential per device), not confirmed Cubase data.",
+                    Label("* Approximate. This interface uses plain CoreAudio rather than ASIO, so Cubase's Port Setup.xml has no real channel numbers for it. Numbering below is a best guess (sequential per device), not confirmed Cubase data.",
                           systemImage: "exclamationmark.triangle.fill")
                         .font(.caption2).foregroundStyle(.orange)
                         .fixedSize(horizontal: false, vertical: true)
@@ -335,7 +335,7 @@ struct PhysicalDeviceSettingsView: View {
     private var portLabelEditor: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Physical Interface Names").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            Text("Optional — label each section with the actual hardware it's on (e.g. \"RME HDSPe MADI FX\"). Useful if you have more than one interface using the same protocol.")
+            Text("Optional. Label each section with the actual hardware it's on (e.g. \"RME HDSPe MADI FX\"). Useful if you have more than one interface using the same protocol.")
                 .font(.caption2).foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
             ForEach(AudioPortLayout.ports) { port in
@@ -460,7 +460,7 @@ private struct PhysicalDeviceEditView: View {
                 } header: {
                     Text("Identity")
                 } footer: {
-                    Text("Converter: a box like a Ferrofish or ADI-648 that only sits between the RME's digital port and external gear — it has no connection to the computer itself. Audio Interface: a self-contained USB/Thunderbolt device (RME, Universal Audio, MOTU, etc.) with its own analog I/O.")
+                    Text("Converter: a box like a Ferrofish or ADI-648 that only sits between the RME's digital port and external gear, with no connection to the computer itself. Audio Interface: a self-contained USB/Thunderbolt device (RME, Universal Audio, MOTU, etc.) with its own analog I/O.")
                 }
 
                 Section {
@@ -481,7 +481,7 @@ private struct PhysicalDeviceEditView: View {
                 } header: {
                     Text("Connector Type & Color")
                 } footer: {
-                    Text("The digital protocol this entry uses to connect to the audio interface — not what's on its other side (which might well be analog/mic jacks). This is just categorization and coloring; it has no effect on the channel numbers below.")
+                    Text("The digital protocol this entry uses to connect to the audio interface, not what's on its other side (which might well be analog/mic jacks). This is just categorization and coloring; it has no effect on the channel numbers below.")
                 }
 
                 Section {
@@ -493,7 +493,7 @@ private struct PhysicalDeviceEditView: View {
                 } header: {
                     Text("Directionality")
                 } footer: {
-                    Text("Most have both directions. Pick Output/Input only for hardware that's genuinely one-way — a monitor system with no input path, a mic preamp with no line output, etc. If a physical connector's OUT and IN sides go to two unrelated pieces of gear, model the one that actually goes through conversion here, and leave the other side to show with no converter — it's a direct digital connection, not something needing an AD/DA conversion.")
+                    Text("Most have both directions. Pick Output/Input only for hardware that's genuinely one-way: a monitor system with no input path, a mic preamp with no line output, etc. If a physical connector's OUT and IN sides go to two unrelated pieces of gear, model the one that actually goes through conversion here, and leave the other side to show with no converter, since it's a direct digital connection, not something needing an AD/DA conversion.")
                 }
 
                 Section {
@@ -523,7 +523,7 @@ private struct PhysicalDeviceEditView: View {
                 } header: {
                     Text("Channels")
                 } footer: {
-                    Text("OUT and IN usually start at the same channel. They only differ when Cubase itself numbers this connector's output and input sides differently in its aggregate channel list — a numbering quirk of the audio interface, not something about the connector. Check Port Setup.xml (reference panel) if you're not sure. Only start positions that don't overlap another converter/interface are listed — this entry's own current channels are always included.")
+                    Text("OUT and IN usually start at the same channel. They only differ when Cubase itself numbers this connector's output and input sides differently in its aggregate channel list, a numbering quirk of the audio interface, not something about the connector. Check Port Setup.xml (reference panel) if you're not sure. Only start positions that don't overlap another converter/interface are listed. This entry's own current channels are always included.")
                 }
 
                 if !conflicts.isEmpty {
@@ -652,7 +652,7 @@ private struct ImportReviewView: View {
             let matches = detectedPorts.contains { $0.direction == direction && $0.channelRange.overlaps(range) }
             if !matches {
                 let dirLabel = direction == .send ? "OUT" : "IN"
-                result.append("\(dirLabel) ch \(range.lowerBound)–\(range.upperBound) — no matching port detected on this Mac")
+                result.append("\(dirLabel) ch \(range.lowerBound)–\(range.upperBound): no matching port detected on this Mac")
             }
         }
         return result
@@ -733,11 +733,11 @@ private struct ImportReviewView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 if detectedPorts.isEmpty {
-                    Label("No ports currently detected on this Mac — open a Cubase project using your interface, then refresh, for a meaningful compatibility check. Proceeding without one just skips the check.",
+                    Label("No ports currently detected on this Mac. Open a Cubase project using your interface, then refresh, for a meaningful compatibility check. Proceeding without one just skips the check.",
                           systemImage: "info.circle")
                         .font(.caption).foregroundStyle(.secondary)
                 } else if mismatchCount > 0 {
-                    Label("\(mismatchCount) of \(devices.count) don't match any port detected on this Mac — likely made for different hardware.",
+                    Label("\(mismatchCount) of \(devices.count) don't match any port detected on this Mac, so they were likely made for different hardware.",
                           systemImage: "exclamationmark.triangle.fill")
                         .font(.caption).foregroundStyle(.orange)
                 } else {
@@ -746,12 +746,12 @@ private struct ImportReviewView: View {
                 }
 
                 if addConflictCount > 0 {
-                    Label("\(addConflictCount) have a channel conflict with your existing devices (or each other) — \"Add to Current\" is disabled until resolved.",
+                    Label("\(addConflictCount) have a channel conflict with your existing devices (or each other), so \"Add to Current\" is disabled until resolved.",
                           systemImage: "xmark.octagon.fill")
                         .font(.caption).foregroundStyle(.red)
                 }
                 if replaceConflictCount > 0 {
-                    Label("\(replaceConflictCount) conflict with each other within this import itself — \"Replace All\" is disabled until resolved.",
+                    Label("\(replaceConflictCount) conflict with each other within this import itself, so \"Replace All\" is disabled until resolved.",
                           systemImage: "xmark.octagon.fill")
                         .font(.caption).foregroundStyle(.red)
                 }

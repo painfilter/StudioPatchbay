@@ -420,7 +420,7 @@ struct ContentView: View {
                 .foregroundStyle(cellScale == 1.0 ? Color.secondary : Color.accentColor)
                 .disabled(cellScale == 1.0)
             }
-            .help("Zoom — \(Int(cellScale * 100))%")
+            .help("Zoom \(Int(cellScale * 100))%")
         }
 
         // Fixed gap so the picker capsule isn't crammed against the zoom controls —
@@ -448,7 +448,7 @@ struct ContentView: View {
                 Label("Export Patchbay", systemImage: "square.and.arrow.up")
             }
             .disabled(state.parsedDevices == nil)
-            .help("Export the full Patchbay as a PDF or image — useful to print and keep near the rack")
+            .help("Export the full Patchbay as a PDF or image, useful to print and keep near the rack")
         }
 
         ToolbarItem(placement: .automatic) {
