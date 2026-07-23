@@ -12,29 +12,28 @@ concurrency:
 
 jobs:
   # The parsing layer is what breaks when Steinberg changes a preference file,
-  # and it builds without a GUI, so this is the job that must stay green.
+  # and it builds without a GUI, so this is the fast job that must stay green.
   parsers:
     name: Parser tests
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Show toolchain
         run: swift --version
       - name: Test
         run: swift test
 
-  # The app target needs the macOS 26 SDK for the availability-guarded Liquid
-  # Glass toolbar APIs. Hosted runners do not always carry that Xcode yet, so a
-  # failure here means "could not verify on this runner", not "the app is
-  # broken". It stays non-blocking until the runner images catch up.
+  # The app needs the macOS 26 SDK for the availability-guarded Liquid Glass
+  # toolbar code. Verified that macos-latest carries it (2026-07-23), so this is
+  # a real check rather than a best effort. If a future runner image drops that
+  # Xcode, this job is the thing to relax, not the parser job.
   app:
-    name: App build (best effort)
+    name: App build
     runs-on: macos-latest
-    continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
-      - name: Show available Xcode versions
-        run: ls /Applications | grep -i xcode || true
+      - uses: actions/checkout@v5
+      - name: Show selected Xcode
+        run: xcodebuild -version
       - name: Build
         run: |
           xcodebuild -project StudioPatchbay.xcodeproj \
