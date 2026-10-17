@@ -1,0 +1,57 @@
+{
+  "menu": {
+    "file": "Ablage",
+    "view": "Ansicht",
+    "reload": "Konfiguration neu laden",
+    "exportPdf": "Als PDF exportieren …",
+    "exportPng": "Als PNG exportieren …",
+    "quit": "StudioPatchbay beenden",
+    "about": "Über StudioPatchbay …",
+    "licenses": "Drittanbieter-Lizenzen …"
+  },
+  "view": {
+    "cards": "Karten",
+    "patchbay": "Patchbay",
+    "controlRoom": "Control Room",
+    "signalFlow": "Signalfluss"
+  },
+  "ui": {
+    "hidden": "Ausgeblendet",
+    "trash": "Papierkorb",
+    "aboutTitle": "Über StudioPatchbay",
+    "aboutTagline": "Das Cubase-Studio-Routing auf einen Blick.",
+    "runningOn": "Läuft auf",
+    "licensing": "Freie Software unter der MIT-Lizenz. Gebaut mit JUCE.",
+    "collapseWindow": "Fenster einklappen",
+    "closeWindow": "Schließen"
+  },
+  "desktop": {
+    "pdfExport": "PDF-Export",
+    "pngExport": "PNG-Export",
+    "exportDetail": "Exportiert die aktuelle Ansicht",
+    "watcher": "Beobachter",
+    "watcherRead": "Gelesen %TIME%",
+    "watcherOff": "Aus",
+    "noExternalPlugins": "Keine External Plugins",
+    "open": "Öffnen",
+    "showPreferencesFolder": "Einstellungsordner zeigen",
+    "exportView": "%VIEW% exportieren",
+    "reloadNow": "Jetzt neu laden",
+    "watchForChanges": "Auf Änderungen achten",
+    "showInFinder": "Im Finder zeigen",
+    "showInExplorer": "Im Explorer zeigen",
+    "showInFileManager": "Im Dateimanager zeigen",
+    "removeFromDesktop": "Vom Schreibtisch entfernen",
+    "noInstallation": "Kein Cubase"
+  },
+  "status": {
+    "noInstallation": "Keine Cubase-Installation gefunden",
+    "devices": "%COUNT% Geräte (%INSTRUMENTS% Instr., %FX% FX)",
+    "ports": "%COUNT% Ports",
+    "buses": "%COUNT% CR-Busse",
+    "watching": "Achtet auf Änderungen"
+  },
+  "message": {
+    "exportFailed": "Export fehlgeschlagen"
+  }
+}

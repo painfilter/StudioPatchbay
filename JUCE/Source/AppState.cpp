@@ -3,7 +3,7 @@
 namespace StudioPatchbay
 {
 
-AppState::AppState()
+AppState::AppState (int preferredCubaseVersion) : preferredVersion (preferredCubaseVersion)
 {
     rescanInstallations();
 }
@@ -19,16 +19,39 @@ void AppState::rescanInstallations()
                                                                : juce::File();
     installations = PlatformPaths::detectInstallations();
 
-    auto index = installations.empty() ? -1 : 0;
-    for (size_t i = 0; i < installations.size(); ++i)
-        if (installations[i].prefsDir == previous)
-            index = static_cast<int> (i);
-
     // Re-parses the files too: "Reload" means the data, not just the list.
-    selectInstallation (index);
+    show (defaultSelection (installations, previous, preferredVersion));
+}
+
+int AppState::defaultSelection (const std::vector<CubaseInstallation>& list, const juce::File& previous,
+                                int preferredVersion)
+{
+    const auto find = [&list] (auto&& predicate)
+    {
+        for (size_t i = 0; i < list.size(); ++i)
+            if (predicate (list[i]))
+                return static_cast<int> (i);
+        return -1;
+    };
+
+    // The one shown before a rescan, else the version chosen last time if it
+    // has data, else the newest with data, else the newest.
+    for (auto index : { find ([&] (const CubaseInstallation& c) { return previous != juce::File() && c.prefsDir == previous; }),
+                        find ([&] (const CubaseInstallation& c) { return c.version == preferredVersion && c.xmlExists(); }),
+                        find ([] (const CubaseInstallation& c) { return c.xmlExists(); }) })
+        if (index >= 0)
+            return index;
+    return list.empty() ? -1 : 0;
 }
 
 void AppState::selectInstallation (int index)
+{
+    if (index >= 0 && index < static_cast<int> (installations.size()))
+        preferredVersion = installations[static_cast<size_t> (index)].version;
+    show (index);
+}
+
+void AppState::show (int index)
 {
     if (index < 0 || index >= static_cast<int> (installations.size()))
     {

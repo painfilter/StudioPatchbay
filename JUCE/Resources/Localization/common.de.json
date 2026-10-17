@@ -1,0 +1,24 @@
+{
+  "menu": {
+    "options": "Optionen",
+    "help": "Hilfe",
+    "language": "Sprache",
+    "languageSystem": "System",
+    "languageEnglish": "English",
+    "languageGerman": "Deutsch",
+    "windowZoom": "Fensterzoom",
+    "appearance": "Darstellung",
+    "appearanceSystem": "System",
+    "appearanceLight": "Hell",
+    "appearanceDark": "Dunkel"
+  },
+  "action": {
+    "ok": "OK",
+    "close": "Schließen",
+    "cancel": "Abbrechen",
+    "save": "Speichern"
+  },
+  "label": {
+    "thirdPartyLicenses": "Drittanbieter-Lizenzen"
+  }
+}

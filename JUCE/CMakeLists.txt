@@ -50,6 +50,13 @@ juce_add_binary_data(StudioPatchbayAssets
         Resources/Fonts/IBMPlexSans-Medium.ttf
         Resources/Fonts/IBMPlexSans-SemiBold.ttf
         Resources/Fonts/IBMPlexSans-Bold.ttf
+        Resources/Brand/StudioPatchbayIcon.png
+        Resources/Brand/PainfilterStackedLight.svg
+        Resources/Brand/PainfilterStackedDark.svg
+        Resources/Localization/StudioPatchbay.en.json
+        Resources/Localization/StudioPatchbay.de.json
+        Resources/Localization/common.en.json
+        Resources/Localization/common.de.json
         THIRD_PARTY_LICENSES.txt
 )
 
@@ -60,12 +67,16 @@ set(SP_CORE_SOURCES
     Source/Model/CubaseConfigParser.cpp
     Source/Model/PlatformPaths.cpp
     Source/Export/PdfWriter.cpp
+    Source/Model/AppSettings.cpp
 )
 
 set(SP_SOURCES
     Source/Main.cpp
     Source/MainWindow.cpp
     Source/AppContentComponent.cpp
+    Source/Workspace.cpp
+    Source/Localisation/Text.cpp
+    Source/UI/AppWindow.cpp
     Source/AppState.cpp
     Source/UI/Fonts.cpp
     Source/UI/OS9MenuBar.cpp
@@ -77,13 +88,13 @@ set(SP_SOURCES
     Source/UI/ControlRoomView.cpp
     Source/UI/SignalFlowView.cpp
     Source/UI/DeviceDetailPanel.cpp
-    Source/UI/AboutDialog.cpp
     Source/Export/ViewExporter.cpp
-    Source/Model/AppSettings.cpp
-    Source/Layout/DesktopLayout.cpp
     Source/UI/DesktopIcons.cpp
     Source/UI/DesktopShelf.cpp
     Source/Design/PlatinumDesktopTile.cpp
+    Source/Design/PlatinumAboutDialog.cpp
+    Source/Design/PlatinumMessageDialog.cpp
+    Source/Design/PlatinumOverlayWindow.cpp
     Source/Design/PlatinumLookAndFeel.cpp
     ${SP_CORE_SOURCES}
 )
@@ -119,12 +130,13 @@ target_sources(StudioPatchbayTests PRIVATE
     Tests/ParserTests.cpp
     Tests/PlatformPathsTests.cpp
     Tests/PdfWriterTests.cpp
-    Tests/DesktopLayoutTests.cpp
-    Source/Layout/DesktopLayout.cpp
+    Tests/AppSettingsTests.cpp
+    Tests/LocalisationTests.cpp
     ${SP_CORE_SOURCES}
 )
 target_include_directories(StudioPatchbayTests PRIVATE Source)
 target_compile_definitions(StudioPatchbayTests PRIVATE
+    SP_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
 )
@@ -133,6 +145,7 @@ target_link_libraries(StudioPatchbayTests
         Catch2::Catch2WithMain
         juce::juce_core
         juce::juce_graphics
+        juce::juce_data_structures
     PUBLIC
         juce::juce_recommended_config_flags
 )
@@ -154,6 +167,7 @@ set_source_files_properties(
     Tests/ParserTests.cpp
     Tests/PlatformPathsTests.cpp
     Tests/PdfWriterTests.cpp
-    Tests/DesktopLayoutTests.cpp
+    Tests/AppSettingsTests.cpp
+    Tests/LocalisationTests.cpp
     PROPERTIES COMPILE_OPTIONS "${SP_WARNING_FLAGS}"
 )

@@ -143,6 +143,8 @@ under JUCE's licence terms**: either the
 [LICENSE.md](https://github.com/juce-framework/JUCE/blob/master/LICENSE.md).
 The bundled IBM Plex Sans font is licensed under the SIL Open Font License 1.1
 (`JUCE/Resources/Fonts/OFL.txt`).
+The Painfilter logo in `JUCE/Resources/Brand/` identifies the publisher; it is
+not covered by the MIT licence and may not be used for other products.
 
 ## Acknowledgments
 

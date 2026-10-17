@@ -1,59 +1,113 @@
 #include "OS9MenuBar.h"
 #include "Fonts.h"
+#include "Localisation/Text.h"
+#include "BinaryData.h"
 
 namespace StudioPatchbay
 {
 
+namespace
+{
+using Text::tr;
+
+juce::String clockText (const juce::Time& t, bool german)
+{
+    if (german)
+        return juce::String (t.getHours()).paddedLeft ('0', 2) + ":"
+               + juce::String (t.getMinutes()).paddedLeft ('0', 2);
+    const auto h24 = t.getHours();
+    return juce::String (h24 % 12 == 0 ? 12 : h24 % 12) + ":"
+           + juce::String (t.getMinutes()).paddedLeft ('0', 2) + (h24 < 12 ? " AM" : " PM");
+}
+
+juce::String dateText (const juce::Time& t, bool german)
+{
+    const auto year = juce::String (t.getYear() % 100).paddedLeft ('0', 2);
+    if (german)
+        return juce::String (t.getDayOfMonth()).paddedLeft ('0', 2) + "."
+               + juce::String (t.getMonth() + 1).paddedLeft ('0', 2) + "." + year;
+    return juce::String (t.getMonth() + 1) + "/" + juce::String (t.getDayOfMonth()) + "/" + year;
+}
+
+// Clock, separator and product name: the strip the clock tick repaints.
+constexpr int rightStripWidth = 202;
+} // namespace
+
 OS9MenuBar::OS9MenuBar()
 {
-    // Configure transparent menu buttons (painted text underneath, buttons on top).
-    for (auto* b : { &fileMenuButton, &viewMenuButton,
-                     &optionsMenuButton, &helpMenuButton })
+    productMark = juce::ImageCache::getFromMemory (BinaryData::StudioPatchbayIcon_png,
+                                                    BinaryData::StudioPatchbayIcon_pngSize);
+
+    const std::pair<juce::TextButton*, Menu> heads[] = {
+        { &fileMenuButton, Menu::file }, { &viewMenuButton, Menu::view },
+        { &optionsMenuButton, Menu::options }, { &helpMenuButton, Menu::help } };
+    for (auto [b, menu] : heads)
     {
         b->getProperties().set ("menuBar", true);
         b->setClickingTogglesState (true);
-        b->setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
-        b->setColour (juce::TextButton::buttonOnColourId, pal.selection);
-        b->setColour (juce::TextButton::textColourOnId, juce::Colours::white);
-        b->setColour (juce::TextButton::textColourOffId, pal.ink);
+        b->setTriggeredOnMouseDown (true);
+        b->onClick = [this, b, m = menu]
+        {
+            if (b->getToggleState() && onMenu)
+                onMenu (m);
+        };
         addAndMakeVisible (*b);
     }
 
-    // Wire up menu button callbacks.
-    fileMenuButton.onClick    = [this] { if (onFileMenu)    onFileMenu(); };
-    viewMenuButton.onClick    = [this] { if (onViewMenu)    onViewMenu(); };
-    optionsMenuButton.onClick = [this] { if (onOptionsMenu) onOptionsMenu(); };
-    helpMenuButton.onClick    = [this] { if (onHelpMenu)    onHelpMenu(); };
-
-    // Invisible clock button – clicking shows date for ~3.6s. The look and feel
-    // draws nothing for a "clockDisplay" button; the clock is painted below it.
+    // The clock is painted; this invisible button only takes the click.
     clockButton.getProperties().set ("clockDisplay", true);
-    clockButton.setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
-    clockButton.setColour (juce::TextButton::buttonOnColourId, juce::Colours::transparentBlack);
     addAndMakeVisible (clockButton);
     clockButton.onClick = [this]
     {
-        showDateInMenuBar = true;
+        showDate = true;
         dateDisplayUntilMs = juce::Time::getMillisecondCounterHiRes()
                              + StudioPatchbay::Design::Interaction::menuClockDateDisplayMs;
-        repaint();
+        repaint (getWidth() - sc (rightStripWidth), 0, sc (rightStripWidth), getHeight());
     };
 
-    // Start the 1-second clock timer.
+    refreshText();
     startTimerHz (1);
+}
+
+juce::TextButton& OS9MenuBar::button (Menu menu)
+{
+    switch (menu)
+    {
+        case Menu::file:    return fileMenuButton;
+        case Menu::view:    return viewMenuButton;
+        case Menu::options: return optionsMenuButton;
+        case Menu::help:    break;
+    }
+    return helpMenuButton;
+}
+
+juce::Component& OS9MenuBar::head (Menu menu) { return button (menu); }
+
+void OS9MenuBar::menuClosed()
+{
+    for (auto* b : { &fileMenuButton, &viewMenuButton, &optionsMenuButton, &helpMenuButton })
+        b->setToggleState (false, juce::dontSendNotification);
+}
+
+void OS9MenuBar::setMenuEnabled (Menu menu, bool enabled)
+{
+    button (menu).setToggleState (false, juce::dontSendNotification);
+    button (menu).setEnabled (enabled);
+}
+
+void OS9MenuBar::refreshText()
+{
+    fileMenuButton.setButtonText (tr ("menu.file"));
+    viewMenuButton.setButtonText (tr ("menu.view"));
+    optionsMenuButton.setButtonText (tr ("menu.options"));
+    helpMenuButton.setButtonText (tr ("menu.help"));
+    resized();
+    repaint();
 }
 
 void OS9MenuBar::setPalette (const StudioPatchbay::Design::Palette& newPalette)
 {
     pal = newPalette;
-
-    for (auto* b : { &fileMenuButton, &viewMenuButton,
-                     &optionsMenuButton, &helpMenuButton })
-    {
-        b->setColour (juce::TextButton::buttonOnColourId, pal.selection);
-        b->setColour (juce::TextButton::textColourOffId, pal.ink);
-    }
-
     repaint();
 }
 
@@ -64,126 +118,66 @@ void OS9MenuBar::setUiScale (double scale)
     repaint();
 }
 
+void OS9MenuBar::setShaded (bool value)
+{
+    shaded = value;
+    repaint();
+}
+
 int OS9MenuBar::sc (int value) const
 {
     return juce::roundToInt (value * uiScale);
 }
 
-// ============================================================================
-// Paint
-// ============================================================================
-
 void OS9MenuBar::paint (juce::Graphics& g)
 {
     const auto edge = juce::jmax (1, sc (1));
-    const auto barH = sc (StudioPatchbay::Design::Metrics::menuBarHeight);
-    const auto now = juce::Time::getCurrentTime();
-    const auto font = Fonts::sans (static_cast<float> (sc (13)), Fonts::Weight::regular);
+    const auto w = getWidth();
 
-    // --- Menu bar background ---
     g.setColour (pal.windowPanel);
-    g.fillRect (0, 0, getWidth(), barH);
-
-    // Bottom separator line.
+    g.fillRect (getLocalBounds());
     g.setColour (pal.ink);
-    g.fillRect (0, barH - edge, getWidth(), edge);
+    g.fillRect (0, getHeight() - edge, w, edge);
 
-    // --- Menu item text (painted under the transparent buttons) ---
-    g.setFont (font);
+    if (productMark.isValid())
+        g.drawImageWithin (productMark, sc (5), sc (4), sc (19), sc (19), juce::RectanglePlacement::centred);
+
+    const auto now = juce::Time::getCurrentTime();
+    g.setFont (Fonts::sans (static_cast<float> (12.0 * uiScale), Fonts::Weight::regular));
+    g.drawText (showDate ? dateText (now, Text::german()) : clockText (now, Text::german()),
+                juce::Rectangle<int> (w - sc (198), 0, sc (StudioPatchbay::Design::Metrics::menuClockWidth), sc (26)),
+                juce::Justification::centredRight);
+
+    g.setColour (pal.shadowEdge);
+    g.fillRect (w - sc (108), sc (3), edge, sc (21));
+    g.setColour (pal.highlightEdge);
+    g.fillRect (w - sc (107), sc (3), edge, sc (21));
+
     g.setColour (pal.ink);
-
-    // Product icon area (left 26px reserved for icon – placeholder square for now).
-    const auto iconRect = juce::Rectangle<int> (sc (6), sc (5), sc (16), sc (16));
-    g.setColour (pal.ink.withAlpha (0.3f));
-    g.drawRect (iconRect, 1);
-
-    // Menu labels – positioned to match the transparent button overlays.
-    // (The buttons handle the clicks; we just paint the text underneath.)
-
-    // --- Clock + Product name (right side) ---
-    g.setColour (pal.ink);
-
-    // Clock text.
-    const auto clockText = showDateInMenuBar ? os9DateText (now) : os9TimeText (now);
-    const auto clockRect = juce::Rectangle<int> (
-        getWidth() - sc (200), 0, sc (StudioPatchbay::Design::Metrics::menuClockWidth), sc (26));
-    g.drawText (clockText, clockRect, juce::Justification::centredRight);
-
-    // Separator before clock.
-    g.fillRect (getWidth() - sc (204), sc (2), edge, sc (22));
-
-    // Product name.
-    const auto nameRect = juce::Rectangle<int> (
-        getWidth() - sc (110), 0, sc (104), sc (26));
-    g.drawText ("StudioPatchbay", nameRect, juce::Justification::centredRight);
-
-    // Separator before product name.
-    g.fillRect (getWidth() - sc (114), sc (2), edge, sc (22));
+    g.drawText (shaded ? tr ("ui.hidden") : juce::String ("StudioPatchbay"),
+                juce::Rectangle<int> (w - sc (102), 0, sc (94), sc (26)), juce::Justification::centredRight);
 }
-
-// ============================================================================
-// Layout
-// ============================================================================
 
 void OS9MenuBar::resized()
 {
-    const auto barH = sc (StudioPatchbay::Design::Metrics::menuBarHeight);
-
-    // Place menu buttons starting after the product icon area.
-    int mx = sc (30);
-    auto placeMenu = [&] (juce::TextButton& b, int logicalWidth)
+    // Heads sit side by side from x 28, each as wide as its title plus a
+    // margin, so a longer translation never clips.
+    const auto font = Fonts::sans (12.0f, Fonts::Weight::regular);
+    int x = 28;
+    for (auto* b : { &fileMenuButton, &viewMenuButton, &optionsMenuButton, &helpMenuButton })
     {
-        b.setBounds (mx, sc (1), sc (logicalWidth), sc (24));
-        mx += sc (logicalWidth) + sc (6);
-    };
-
-    placeMenu (fileMenuButton, 46);
-    placeMenu (viewMenuButton, 48);
-    placeMenu (optionsMenuButton, 70);
-    placeMenu (helpMenuButton, 50);
-
-    // Clock button (invisible click target over the clock area).
-    clockButton.setBounds (getWidth() - sc (210), 0, sc (100), barH);
+        const auto width = juce::roundToInt (juce::GlyphArrangement::getStringWidth (font, b->getButtonText())) + 22;
+        b->setBounds (sc (x), sc (1), sc (width), sc (24));
+        x += width + 1;
+    }
+    clockButton.setBounds (getWidth() - sc (202), 0, sc (98), sc (27));
 }
-
-// ============================================================================
-// Clock timer
-// ============================================================================
 
 void OS9MenuBar::timerCallback()
 {
-    if (showDateInMenuBar
-        && juce::Time::getMillisecondCounterHiRes() >= dateDisplayUntilMs)
-    {
-        showDateInMenuBar = false;
-    }
-
-    // Repaint only the clock + product name strip (right 220px).
-    repaint (getWidth() - sc (220), 0, sc (220),
-             sc (StudioPatchbay::Design::Metrics::menuBarHeight));
-}
-
-juce::String OS9MenuBar::os9TimeText (const juce::Time& t)
-{
-    const auto h24 = t.getHours();
-    const auto h12 = h24 % 12 == 0 ? 12 : h24 % 12;
-    return juce::String (h12) + ":"
-           + juce::String (t.getMinutes()).paddedLeft ('0', 2)
-           + (h24 < 12 ? " AM" : " PM");
-}
-
-juce::String OS9MenuBar::os9DateText (const juce::Time& t)
-{
-    const auto dayNames = std::array<const char*, 7> {
-        "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
-    };
-    const auto monthNames = std::array<const char*, 12> {
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    };
-    return juce::String (dayNames[static_cast<size_t> (t.getDayOfWeek())]) + " "
-           + juce::String (monthNames[static_cast<size_t> (t.getMonth())]) + " "
-           + juce::String (t.getDayOfMonth());
+    if (showDate && juce::Time::getMillisecondCounterHiRes() >= dateDisplayUntilMs)
+        showDate = false;
+    repaint (getWidth() - sc (rightStripWidth), 0, sc (rightStripWidth), getHeight());
 }
 
 } // namespace StudioPatchbay

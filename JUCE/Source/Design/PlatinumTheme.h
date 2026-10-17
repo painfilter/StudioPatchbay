@@ -24,6 +24,7 @@ struct Palette
     juce::Colour scrollbarThumb;
     juce::Colour graphGrid;
     juce::Colour inkSoft;
+    juce::Colour modalScrim;
 };
 
 inline Palette lightPalette()
@@ -39,7 +40,8 @@ inline Palette lightPalette()
              juce::Colour (0xffaaaaaa),
              juce::Colour (0xff9f9bf7),
              juce::Colour (0xffbbbbbb),
-             juce::Colour (0xff6b6f76) };
+             juce::Colour (0xff6b6f76),
+             juce::Colour (0x38000000) };
 }
 
 inline Palette darkPalette()
@@ -55,7 +57,8 @@ inline Palette darkPalette()
              juce::Colour (0xff242824),
              juce::Colour (0xff7b75b5),
              juce::Colour (0xff4d534f),
-             juce::Colour (0xff9a9ea4) };
+             juce::Colour (0xff9a9ea4),
+             juce::Colour (0x38000000) };
 }
 
 namespace Metrics
@@ -69,6 +72,21 @@ inline constexpr int desktopTileHorizontalStep = 112;
 inline constexpr int desktopTileVerticalStep = 88;
 inline constexpr int desktopIconWidth = 32;
 inline constexpr int desktopIconHeight = 27;
+inline constexpr int aboutBrandColumnWidth = 104;
+inline constexpr int aboutBrandLogoHeight = 92;
+inline constexpr int aboutBrandLogoOffsetX = -4;
+inline constexpr int aboutBrandLogoWidth = 84;
+inline constexpr int aboutContactRowBottomInset = 38;
+inline constexpr int aboutContactSeparatorWidth = 12;
+inline constexpr int aboutDialogHeight = 250;
+inline constexpr int aboutDialogWidth = 440;
+inline constexpr int aboutLicensingRowHeight = 34;
+inline constexpr int messageDialogHeight = 190;
+inline constexpr int messageDialogWidth = 440;
+inline constexpr int modalWindowDragMargin = 4;
+inline constexpr int windowControlSize = 16;
+inline constexpr int windowDragDotSize = 1;
+inline constexpr int windowStroke = 2;
 }
 
 namespace Interaction
@@ -78,6 +96,8 @@ inline constexpr float desktopTileHoverFillAlphaLight = 0.54f;
 inline constexpr float desktopTileHoverFillAlphaDark = 0.82f;
 inline constexpr float desktopTileSelectedFillAlpha = 0.1f;
 inline constexpr float desktopTileSelectedOutlineAlpha = 0.8f;
+inline constexpr float aboutDividerAlphaLight = 0.65f;
+inline constexpr float aboutDividerAlphaDark = 0.9f;
 }
 
 namespace Scale

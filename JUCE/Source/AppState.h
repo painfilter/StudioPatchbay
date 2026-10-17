@@ -19,14 +19,20 @@ namespace StudioPatchbay
 class AppState : public juce::ChangeBroadcaster
 {
 public:
-    AppState();
+    // The Cubase version chosen in an earlier session, or 0.
+    explicit AppState (int preferredCubaseVersion = 0);
 
     // --- Installations ---
 
     const std::vector<CubaseInstallation>& getInstallations() const { return installations; }
 
-    // Select an installation and parse its XML files.
+    // Select an installation (the user's choice, remembered) and parse its XML files.
     void selectInstallation (int index);
+    int getPreferredVersion() const { return preferredVersion; }
+
+    // Which installation to show without a choice in this session.
+    static int defaultSelection (const std::vector<CubaseInstallation>&, const juce::File& previous,
+                                 int preferredVersion);
     int getSelectedIndex() const { return selectedIndex; }
     const CubaseInstallation* getSelectedInstallation() const;
 
@@ -51,11 +57,13 @@ public:
     bool hasError() const { return errorMessage.isNotEmpty(); }
 
 private:
+    void show (int index);
     void parseSelectedInstallation();
     void onFilesChanged();
 
     std::vector<CubaseInstallation> installations;
     int selectedIndex = -1;
+    int preferredVersion = 0;
 
     ParsedDevices parsedDevices;
     std::vector<DetectedPort> detectedPorts;

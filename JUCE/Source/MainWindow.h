@@ -8,44 +8,54 @@
 namespace StudioPatchbay
 {
 
-// Main application window with OS9 title bar, keyboard shortcuts,
-// and menu callbacks. Implements KeyListener for Cmd+R (Reload),
-// Cmd+1-4 (view switching), and Cmd+Q (quit).
+// The native window. Its title bar and frame are the system's, so it moves
+// and resizes like any other window; inside it the desktop is drawn.
+//
+// Size and zoom fit together: the desktop has a logical size, and the window
+// is that size times the zoom. Choosing a zoom step keeps the logical size and
+// resizes the window; dragging the window edge keeps the zoom and changes the
+// logical size. The smallest window is the logical minimum times the zoom.
 class MainWindow : public juce::DocumentWindow,
                    public juce::KeyListener,
+                   private juce::DarkModeSettingListener,
                    private DesktopActions
 {
 public:
-    MainWindow (juce::String name);
+    explicit MainWindow (juce::String name);
     ~MainWindow() override;
 
     void closeButtonPressed() override;
 
-    // KeyListener.
     using juce::DocumentWindow::keyPressed;
     bool keyPressed (const juce::KeyPress& key, juce::Component* originatingComponent) override;
 
     AppContentComponent& getContent() { return *content; }
 
 private:
-    void showFileMenu();
-    void showViewMenu();
-    void showOptionsMenu();
-    void showHelpMenu();
+    void showMenu (OS9MenuBar::Menu);
+    juce::PopupMenu fileMenu();
+    juce::PopupMenu viewMenu();
+    juce::PopupMenu optionsMenu();
+    juce::PopupMenu helpMenu();
+
     // DesktopActions; the menus use the same commands.
     ViewSwitcher::View currentView() const override;
     void exportView (Export::Format, ViewSwitcher::View) override;
     void reload() override;
     void showAbout() override;
     void forgetRecentExport (const juce::File&) override;
+    void restoreWindow (juce::Rectangle<int> fromIcon) override;
+
+    void darkModeSettingChanged() override;
 
     void saveSettings();
-    void applyTheme (bool dark);
+    void applyAppearance();
+    void applyLanguage (const juce::String&);
     void applyZoom (double scale);
+    juce::Point<int> logicalSize() const;
 
-    StudioPatchbay::Design::PlatinumLookAndFeel os9Laf;
+    Design::PlatinumLookAndFeel os9Laf;
     AppContentComponent* content = nullptr;
-    double uiScale = 1.0;
     AppSettings settings;
     std::unique_ptr<juce::FileChooser> exportChooser;
 

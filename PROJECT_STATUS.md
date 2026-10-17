@@ -15,19 +15,28 @@ for tests; Cubase does not run there).
 - **Phase 5:** Patchbay Grid View (`PatchbayGridView`).
 - **Phase 6:** Control Room (`ControlRoomView`) and Signal Flow (`SignalFlowView`).
 - **Phase 7:**
-  - `DeviceDetailPanel`, `AboutDialog` (licences), keyboard shortcuts (Cmd+1-4, Cmd+R, Cmd+Q).
+  - `DeviceDetailPanel`, keyboard shortcuts (Cmd+1-4, Cmd+R, Cmd+Q).
   - File > Export as PDF / PNG of the active view's full content (`JUCE/Source/Export/`).
     PNG at 2x; PDF is a single page holding the same raster (1 logical pixel = 1 pt).
   - Windows support in `PlatformPaths`: `%APPDATA%\Steinberg\Cubase NN_64\`;
     macOS: `~/Library/Preferences/Cubase NN/`.
   - Reload re-reads the files and keeps the selected installation.
   - Theme and zoom are remembered (`AppSettings`, versioned settings file).
-- **Desktop** (`UI/DesktopShelf`, layout in `Layout/DesktopLayout`): icons at the
-  right edge for each Cubase installation (click selects, context menu opens the
-  preferences folder), PDF/PNG export programs (click exports the active view,
-  drop a view tab to export that view), the watcher (click reloads, context menu
-  toggles watching), the last three exported documents (open / show / remove),
-  and the trash, which opens About. The sidebar list stays.
+- **Shell (stage 1 of the 1:1 port):** the native window holds a simulated
+  desktop (`AppContentComponent`): menu bar with product mark, clock and product
+  name; the application window floats on the desktop (`UI/AppWindow`, content in
+  `Workspace`). The collapse box shades the window onto the desktop with a
+  220 ms ZoomRects outline; while collapsed, the desktop shows StudioPatchbay
+  (bottom left, restores), the trash (bottom right, About), and in a grid the
+  Cubase installations (click shows that version), PDF/PNG export, the watcher
+  and the last exports (`UI/DesktopShelf`). File and View are off while collapsed.
+  About, licences and messages are overlays. Options: Window Zoom, Language
+  (System/English/Deutsch), Appearance (System/Light/Dark). Zoom keeps the
+  logical desktop size and resizes the window; dragging the window edge keeps
+  the zoom. Settings file v2 (appearance, language, window size, last Cubase
+  version; v1 `darkMode` is migrated).
+- **Texts:** `JUCE/Resources/Localization/StudioPatchbay.<lang>.json` (product)
+  and `common.<lang>.json` (generated, do not edit).
 - **Look and feel:** `JUCE/Source/Design/` is generated; do not edit by hand.
 - **CI:** `.github/workflows/ci.yml` builds and tests on Linux (tests only),
   macOS (universal app + tests) and Windows x64 (app + tests), and uploads
@@ -36,13 +45,16 @@ for tests; Cubase does not run there).
 ### Tests
 Catch2, run by `ctest`: parsers, Cubase folder detection (both platform
 spellings), app data directory, PDF writer (structure, xref offsets, pixel
-round-trip), desktop layout (columns, trash position, zoom).
+round-trip), settings (v1 migration, round trip, newer files untouched),
+texts (English and German have the same keys; every key the code uses exists).
 
 ### Remaining Work / Next Tasks
 1. Manual test on a real Cubase setup on macOS and on Windows (detection,
    live reload, export, dark/light, every zoom level).
-2. Features of the Swift app not yet ported: converter/interface editor
-   (physical devices), filtering and search.
+2. Stage 2: physical device model 1:1 with the Swift app (same JSON files) and
+   the Converters & Interfaces window. Stage 3: views 1:1 (patchbay by port and
+   device, filter, search with jump, back/forward, content zoom). Stage 4:
+   export as in the Swift app (patchbay with "Connected" table).
 3. Release packaging: macOS signing + notarisation (`packaging/release.sh` is
    for the Swift app), Windows code signing / installer.
 4. Replace the Swift app on `main` once the above is done (with approval).

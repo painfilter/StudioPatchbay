@@ -2,79 +2,94 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "Design/PlatinumLookAndFeel.h"
+#include "Design/PlatinumAboutDialog.h"
+#include "Design/PlatinumMessageDialog.h"
+#include "Design/PlatinumOverlayWindow.h"
 #include "AppState.h"
+#include "Workspace.h"
 #include "UI/OS9MenuBar.h"
-#include "UI/SidebarPanel.h"
-#include "UI/ViewSwitcher.h"
-#include "UI/CardsView.h"
-#include "UI/PatchbayGridView.h"
-#include "UI/ControlRoomView.h"
-#include "UI/SignalFlowView.h"
-#include "UI/DeviceDetailPanel.h"
-#include "Export/ViewExporter.h"
+#include "UI/AppWindow.h"
 #include "UI/DesktopShelf.h"
-#include "Layout/DesktopLayout.h"
 
 namespace StudioPatchbay
 {
 
-// Root content component for the StudioPatchbay application window.
-// Owns the OS9 menu bar, sidebar, view tabs, and all view components.
+// The simulated desktop that fills the native window: the menu bar, the
+// application window floating on the desktop pattern, and, while that window
+// is collapsed (WindowShade), the desktop icons. About, the licences and
+// messages open as overlays above everything.
+//
+// Every measure is logical and multiplied by the window zoom, so a zoom step
+// scales the whole desktop; resizing the native window changes the logical
+// desktop size instead.
 class AppContentComponent : public juce::Component,
-                            public juce::DragAndDropContainer,
-                            private juce::ChangeListener
+                            private juce::Timer
 {
 public:
-    AppContentComponent();
+    explicit AppContentComponent (int preferredCubaseVersion);
+    ~AppContentComponent() override;
 
-    void paint (juce::Graphics& g) override;
+    void paint (juce::Graphics&) override;
+    void paintOverChildren (juce::Graphics&) override;
     void resized() override;
 
-    void setDarkMode (bool shouldUseDarkMode);
+    void setDarkMode (bool);
     bool isDarkMode() const { return darkMode; }
-
-    void setUiScale (double scale);
+    void setUiScale (double);
+    double getUiScale() const { return uiScale; }
+    void refreshText();
 
     OS9MenuBar& getMenuBar() { return menuBar; }
     AppState& getAppState() { return appState; }
-
-    // View switching API for menus and keyboard shortcuts.
-    void switchToView (ViewSwitcher::View view) { viewSwitcher.setActiveView (view); showActiveView(); }
-    ViewSwitcher::View getCurrentView() const { return viewSwitcher.getActiveView(); }
-
-    // A view's complete content, for export.
-    Export::ExportSource exportSource (ViewSwitcher::View view);
-
+    Workspace& getWorkspace() { return workspace; }
     DesktopShelf& getDesktop() { return desktop; }
 
+    bool isShaded() const { return shaded; }
+    void setShaded (bool shouldBeShaded, juce::Rectangle<int> icon = {});
+    std::function<void (bool)> onShadedChanged;
+
+    void showAbout();
+    void showLicenses();
+    void showMessage (const juce::String& title, const juce::String& message);
+
+    // The smallest logical desktop the window layout works in.
+    static constexpr int minimumWidth = 760;
+    static constexpr int minimumHeight = 560;
+
 private:
-    void changeListenerCallback (juce::ChangeBroadcaster* source) override;
-    void onViewChanged (ViewSwitcher::View view);
-    void updateStatusText();
-    void showActiveView();
+    // zero-footprint: runs only for the 220 ms of a WindowShade animation.
+    void timerCallback() override;
+    int sc (int value) const { return juce::roundToInt (value * uiScale); }
+    juce::Rectangle<int> windowBounds() const;
+    void updateTitle();
+    void finishAnimation();
 
-    int sc (int value) const;
-    void paintContentFrame (juce::Graphics& g, juce::Rectangle<int> area);
+    AppState appState;
+    Workspace workspace { appState };
+    AppWindow appWindow { workspace };
+    OS9MenuBar menuBar;
+    DesktopShelf desktop { appState };
 
-    StudioPatchbay::Design::Palette pal = StudioPatchbay::Design::darkPalette();
+    Design::AboutDialog about;
+    Design::MessageDialog message;
+    std::unique_ptr<Design::OverlayWindow> licenses;
+
+    Design::Palette pal = Design::darkPalette();
     bool darkMode = true;
     double uiScale = 1.0;
 
-    AppState appState;
-    OS9MenuBar menuBar;
-    SidebarPanel sidebar { appState };
-    ViewSwitcher viewSwitcher;
+    bool shaded = false;
+    bool animating = false;
+    bool animatingToShaded = false;
+    double animationStartMs = 0.0;
+    juce::Rectangle<int> animationIcon;
 
-    // View components.
-    CardsView cardsView;
-    PatchbayGridView patchbayView;
-    ControlRoomView controlRoomView;
-    SignalFlowView signalFlowView;
-    DeviceDetailPanel detailPanel;
-    DesktopShelf desktop { appState };
-    DesktopLayout desktopLayout;
-
-    juce::Label statusLabel;
+    struct TitleWatcher : juce::ChangeListener
+    {
+        explicit TitleWatcher (AppContentComponent& o) : owner (o) {}
+        void changeListenerCallback (juce::ChangeBroadcaster*) override { owner.updateTitle(); }
+        AppContentComponent& owner;
+    } titleWatcher { *this };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AppContentComponent)
 };

@@ -1,0 +1,57 @@
+{
+  "menu": {
+    "file": "File",
+    "view": "View",
+    "reload": "Reload Configuration",
+    "exportPdf": "Export as PDF…",
+    "exportPng": "Export as PNG…",
+    "quit": "Quit StudioPatchbay",
+    "about": "About StudioPatchbay…",
+    "licenses": "Third-Party Licenses…"
+  },
+  "view": {
+    "cards": "Cards",
+    "patchbay": "Patchbay",
+    "controlRoom": "Control Room",
+    "signalFlow": "Signal Flow"
+  },
+  "ui": {
+    "hidden": "Hidden",
+    "trash": "Trash",
+    "aboutTitle": "About StudioPatchbay",
+    "aboutTagline": "Your Cubase studio routing at a glance.",
+    "runningOn": "Running on",
+    "licensing": "Free software under the MIT licence. Built with JUCE.",
+    "collapseWindow": "Collapse window",
+    "closeWindow": "Close"
+  },
+  "desktop": {
+    "pdfExport": "PDF Export",
+    "pngExport": "PNG Export",
+    "exportDetail": "Exports the current view",
+    "watcher": "Watcher",
+    "watcherRead": "Read %TIME%",
+    "watcherOff": "Off",
+    "noExternalPlugins": "No External Plugins",
+    "open": "Open",
+    "showPreferencesFolder": "Show Preferences Folder",
+    "exportView": "Export %VIEW%",
+    "reloadNow": "Reload Now",
+    "watchForChanges": "Watch for Changes",
+    "showInFinder": "Show in Finder",
+    "showInExplorer": "Show in Explorer",
+    "showInFileManager": "Show in File Manager",
+    "removeFromDesktop": "Remove from Desktop",
+    "noInstallation": "No Cubase"
+  },
+  "status": {
+    "noInstallation": "No Cubase installation found",
+    "devices": "%COUNT% devices (%INSTRUMENTS% instr, %FX% FX)",
+    "ports": "%COUNT% ports",
+    "buses": "%COUNT% CR buses",
+    "watching": "Watching for changes"
+  },
+  "message": {
+    "exportFailed": "Export failed"
+  }
+}

@@ -1,58 +1,92 @@
 #include "AppContentComponent.h"
 #include "UI/Fonts.h"
+#include "Localisation/Text.h"
+#include "BinaryData.h"
 
 namespace StudioPatchbay
 {
 
-AppContentComponent::AppContentComponent()
+namespace
 {
-    addAndMakeVisible (menuBar);
-    addAndMakeVisible (sidebar);
-    addAndMakeVisible (viewSwitcher);
-    addAndMakeVisible (cardsView);
-    addAndMakeVisible (patchbayView);
-    addAndMakeVisible (controlRoomView);
-    addAndMakeVisible (signalFlowView);
-    addAndMakeVisible (statusLabel);
-    addAndMakeVisible (desktop);
+using Text::tr;
 
-    menuBar.setPalette (pal);
-    sidebar.setPalette (pal);
-    viewSwitcher.setPalette (pal);
-    cardsView.setPalette (pal);
-    patchbayView.setPalette (pal);
-    controlRoomView.setPalette (pal);
-    signalFlowView.setPalette (pal);
-    detailPanel.setPalette (pal);
+constexpr double shadeAnimationMs = 220.0;
 
-    // Detail panel starts hidden, on top of other views.
-    addChildComponent (detailPanel);
-    detailPanel.onClose = [this] { resized(); };
-
-    statusLabel.setFont (Fonts::sans (11.0f, Fonts::Weight::regular));
-    statusLabel.setColour (juce::Label::textColourId, pal.ink.withAlpha (0.5f));
-    statusLabel.setJustificationType (juce::Justification::centredLeft);
-
-    // Wire view switching.
-    viewSwitcher.onViewChanged = [this] (ViewSwitcher::View v) { onViewChanged (v); };
-
-    // Wire card click → detail panel.
-    cardsView.onDeviceClicked = [this] (const ParsedDevice& dev)
-    {
-        detailPanel.showDevice (&dev, appState.getDetectedPorts());
-        resized();
-    };
-
-    appState.addChangeListener (this);
-
-    // Trigger initial data load.
-    changeListenerCallback (&appState);
-    showActiveView();
+std::unique_ptr<juce::Drawable> logo (const char* data, int size)
+{
+    return juce::Drawable::createFromSVGString (juce::String::fromUTF8 (data, size));
 }
 
-int AppContentComponent::sc (int value) const
+void frame (juce::Graphics& g, juce::Rectangle<int> r, juce::Colour c, int thickness)
 {
-    return juce::roundToInt (value * uiScale);
+    g.setColour (c);
+    for (int i = 0; i < thickness && ! r.isEmpty(); ++i, r = r.reduced (1))
+    {
+        g.fillRect (r.getX(), r.getY(), r.getWidth(), 1);
+        g.fillRect (r.getX(), r.getBottom() - 1, r.getWidth(), 1);
+        g.fillRect (r.getX(), r.getY(), 1, r.getHeight());
+        g.fillRect (r.getRight() - 1, r.getY(), 1, r.getHeight());
+    }
+}
+
+juce::Rectangle<int> interpolate (juce::Rectangle<int> from, juce::Rectangle<int> to, double amount)
+{
+    const auto mix = [amount] (int a, int b) { return juce::roundToInt (a + (b - a) * amount); };
+    return { mix (from.getX(), to.getX()), mix (from.getY(), to.getY()),
+             mix (from.getWidth(), to.getWidth()), mix (from.getHeight(), to.getHeight()) };
+}
+
+// The third-party notices, readable and scrollable inside an overlay window.
+class LicenseText : public juce::Component
+{
+public:
+    LicenseText()
+    {
+        text.setMultiLine (true);
+        text.setReadOnly (true);
+        text.setScrollbarsShown (true);
+        text.setCaretVisible (false);
+        text.setBorder (juce::BorderSize<int> (1, 1, 1, 0));
+        text.setFont (Fonts::sans (12.0f, Fonts::Weight::regular));
+        text.setText (juce::String::fromUTF8 (BinaryData::THIRD_PARTY_LICENSES_txt,
+                                              BinaryData::THIRD_PARTY_LICENSES_txtSize), false);
+        text.moveCaretToTop (false);
+        addAndMakeVisible (text);
+    }
+    void resized() override { text.setBounds (getLocalBounds().reduced (12)); }
+    juce::TextEditor text;
+};
+} // namespace
+
+AppContentComponent::AppContentComponent (int preferredCubaseVersion)
+    : appState (preferredCubaseVersion),
+      about ([this] { about.setVisible (false); },
+             logo (BinaryData::PainfilterStackedLight_svg, BinaryData::PainfilterStackedLight_svgSize),
+             logo (BinaryData::PainfilterStackedDark_svg, BinaryData::PainfilterStackedDark_svgSize)),
+      message ([this] { message.setVisible (false); })
+{
+    addAndMakeVisible (appWindow);
+    addAndMakeVisible (menuBar);
+    addChildComponent (desktop);
+    addChildComponent (about);
+    addChildComponent (message);
+
+    appWindow.onCollapse = [this] { setShaded (true); };
+    appState.addChangeListener (&titleWatcher);
+
+    refreshText();
+}
+
+AppContentComponent::~AppContentComponent()
+{
+    appState.removeChangeListener (&titleWatcher);
+}
+
+juce::Rectangle<int> AppContentComponent::windowBounds() const
+{
+    // Below the menu bar with a 6 px gap, 8 px from the other edges.
+    const auto top = sc (Design::Metrics::menuBarHeight + 6);
+    return { sc (8), top, getWidth() - sc (16), getHeight() - top - sc (8) };
 }
 
 // ============================================================================
@@ -61,41 +95,47 @@ int AppContentComponent::sc (int value) const
 
 void AppContentComponent::paint (juce::Graphics& g)
 {
-    const auto barH = sc (StudioPatchbay::Design::Metrics::menuBarHeight);
+    const auto window = windowBounds();
+    const auto windowShown = appWindow.isVisible();
 
-    const auto contentArea = desktopLayout.window;
+    // The desktop shows only around the window: paint it there and nowhere
+    // else, so the clock's small repaint stays small.
+    juce::Graphics::ScopedSaveState state (g);
+    if (windowShown)
+        g.excludeClipRegion (window);
+    g.fillAll (pal.desktop);
 
-    // The desktop shows only around the content frame: paint it there and
-    // nowhere else, so a small repaint (the menu clock) stays small.
+    Design::DesktopPattern pattern;
+    pattern.top = sc (Design::Metrics::menuBarHeight);
+    pattern.step = juce::jmax (1, sc (4));
+    pattern.rowOffset = sc (2);
+    pattern.dotSize = juce::jmax (1, sc (1));
+    Design::paintDesktopPattern (g, pal.desktop.brighter (darkMode ? 0.08f : 0.12f), pattern,
+                                 windowShown ? window : juce::Rectangle<int>());
+
+    if (windowShown)
     {
-        juce::Graphics::ScopedSaveState state (g);
-        g.excludeClipRegion (contentArea);
-        g.fillAll (pal.desktop);
-        Design::DesktopPattern pattern;
-        pattern.top = barH;
-        pattern.step = juce::jmax (1, sc (4));
-        pattern.rowOffset = sc (2);
-        pattern.dotSize = juce::jmax (1, sc (1));
-        Design::paintDesktopPattern (g, pal.desktop.brighter (0.12f), pattern, contentArea);
+        g.setColour (juce::Colours::black.withAlpha (0.5f));
+        g.fillRect (window.translated (sc (4), sc (4)).getIntersection (getLocalBounds()));
     }
-
-    paintContentFrame (g, contentArea);
 }
 
-void AppContentComponent::paintContentFrame (juce::Graphics& g, juce::Rectangle<int> area)
+void AppContentComponent::paintOverChildren (juce::Graphics& g)
 {
+    if (! animating)
+        return;
+
+    // ZoomRects: the outline travels between window and icon, trailed by two
+    // earlier outlines. Only outlines; nothing is filled.
+    const auto elapsed = juce::Time::getMillisecondCounterHiRes() - animationStartMs;
+    const auto progress = juce::jlimit (0.0, 1.0, elapsed / shadeAnimationMs);
     const auto edge = juce::jmax (1, sc (1));
-
-    g.setColour (pal.windowPanel);
-    g.fillRect (area);
-
-    g.setColour (pal.shadowEdge);
-    g.fillRect (area.getX(), area.getY(), area.getWidth(), edge);
-    g.fillRect (area.getX(), area.getY(), edge, area.getHeight());
-
-    g.setColour (pal.highlightEdge);
-    g.fillRect (area.getX(), area.getBottom() - edge, area.getWidth(), edge);
-    g.fillRect (area.getRight() - edge, area.getY(), edge, area.getHeight());
+    for (int trail = 0; trail < 3; ++trail)
+    {
+        const auto step = juce::jlimit (0.0, 1.0, progress - trail * 0.12);
+        const auto amount = animatingToShaded ? step : 1.0 - step;
+        frame (g, interpolate (windowBounds(), animationIcon, amount), pal.ink, edge);
+    }
 }
 
 // ============================================================================
@@ -104,107 +144,136 @@ void AppContentComponent::paintContentFrame (juce::Graphics& g, juce::Rectangle<
 
 void AppContentComponent::resized()
 {
-    auto area = getLocalBounds();
-    const auto barH = sc (StudioPatchbay::Design::Metrics::menuBarHeight);
+    menuBar.setBounds (0, 0, getWidth(), sc (Design::Metrics::menuBarHeight));
+    appWindow.setBounds (windowBounds());
+    desktop.setBounds (getLocalBounds());
+    for (juce::Component* overlay : { static_cast<juce::Component*> (&about),
+                                      static_cast<juce::Component*> (&message),
+                                      static_cast<juce::Component*> (licenses.get()) })
+        overlay->setBounds (getLocalBounds());
+}
 
-    menuBar.setBounds (area.removeFromTop (barH));
+// ============================================================================
+// WindowShade
+// ============================================================================
 
-    // The window shares the desktop with the icons at the right edge.
-    desktopLayout = DesktopLayout::compute (area, desktop.itemCount(), uiScale);
-    desktop.place (desktopLayout);
-    area = desktopLayout.window;
+void AppContentComponent::setShaded (bool shouldBeShaded, juce::Rectangle<int> icon)
+{
+    if (shaded == shouldBeShaded && ! animating)
+        return;
 
-    // Status bar at the bottom.
-    auto statusArea = area.removeFromBottom (sc (22));
-    statusLabel.setBounds (statusArea.reduced (sc (8), 0));
+    animationIcon = icon.isEmpty() ? desktop.appIconBounds() : icon;
+    animatingToShaded = shouldBeShaded;
+    animationStartMs = juce::Time::getMillisecondCounterHiRes();
+    animating = true;
+    startTimerHz (60);
 
-    // Sidebar.
-    sidebar.setBounds (area.removeFromLeft (sc (180)));
-    area.removeFromLeft (sc (4));
-
-    // View tabs.
-    viewSwitcher.setBounds (area.removeFromTop (sc (30)));
-
-    // Detail panel on the right (if visible).
-    if (detailPanel.isShowing())
+    if (shouldBeShaded)
     {
-        auto detailArea = area.removeFromRight (sc (DeviceDetailPanel::panelWidth));
-        detailPanel.setBounds (detailArea);
+        // The window goes at once and the outline shrinks into the icon.
+        about.setVisible (false);
+        message.setVisible (false);
+        licenses->setVisible (false);
+        shaded = true;
+        appWindow.setVisible (false);
+        desktop.setVisible (true);
+        menuBar.setShaded (true);
+        if (onShadedChanged)
+            onShadedChanged (true);
+        animationIcon = icon.isEmpty() ? desktop.appIconBounds() : icon;
     }
-
-    // All views share the remaining bounds.
-    cardsView.setBounds (area);
-    patchbayView.setBounds (area);
-    controlRoomView.setBounds (area);
-    signalFlowView.setBounds (area);
+    // Restoring keeps the desktop until the outline has reached the window,
+    // so the window never appears ahead of its animation.
+    repaint();
 }
 
-// ============================================================================
-// View switching
-// ============================================================================
-
-void AppContentComponent::onViewChanged (ViewSwitcher::View)
+void AppContentComponent::timerCallback()
 {
-    showActiveView();
+    if (juce::Time::getMillisecondCounterHiRes() - animationStartMs >= shadeAnimationMs)
+        finishAnimation();
+    repaint();
 }
 
-void AppContentComponent::showActiveView()
+void AppContentComponent::finishAnimation()
 {
-    auto view = viewSwitcher.getActiveView();
-
-    cardsView.setVisible (view == ViewSwitcher::View::cards);
-    patchbayView.setVisible (view == ViewSwitcher::View::patchbay);
-    controlRoomView.setVisible (view == ViewSwitcher::View::controlRoom);
-    signalFlowView.setVisible (view == ViewSwitcher::View::signalFlow);
-}
-
-// ============================================================================
-// Export
-// ============================================================================
-
-Export::ExportSource AppContentComponent::exportSource (ViewSwitcher::View view)
-{
-    auto& content = [&]() -> juce::Component&
+    stopTimer();
+    animating = false;
+    if (! animatingToShaded && shaded)
     {
-        switch (view)
-        {
-            case ViewSwitcher::View::patchbay:    return patchbayView.getExportContent();
-            case ViewSwitcher::View::controlRoom: return controlRoomView.getExportContent();
-            case ViewSwitcher::View::signalFlow:  return signalFlowView.getExportContent();
-            case ViewSwitcher::View::cards:       break;
-        }
-        return cardsView.getExportContent();
-    }();
-
-    juce::String title ("StudioPatchbay - " + ViewSwitcher::viewName (view));
-    if (auto* inst = appState.getSelectedInstallation())
-        title << " - " << inst->displayName();
-
-    return { content, pal.windowPanel, uiScale, title };
+        shaded = false;
+        desktop.setVisible (false);
+        appWindow.setVisible (true);
+        menuBar.setShaded (false);
+        if (onShadedChanged)
+            onShadedChanged (false);
+    }
 }
 
 // ============================================================================
-// Theme
+// Overlays
 // ============================================================================
 
-void AppContentComponent::setDarkMode (bool shouldUseDarkMode)
+void AppContentComponent::showAbout()
 {
-    darkMode = shouldUseDarkMode;
-    pal = darkMode ? StudioPatchbay::Design::darkPalette()
-                   : StudioPatchbay::Design::lightPalette();
+    Design::AboutDialog::Content c;
+    c.title = tr ("ui.aboutTitle");
+    c.productName = "StudioPatchbay";
+    c.tagline = tr ("ui.aboutTagline");
+    c.versionLine = "Version " + juce::String (SP_VERSION_STRING);
+    c.architectureLine = tr ("ui.runningOn") + " " + juce::SystemStats::getOperatingSystemName()
+                         + (juce::SystemStats::getCpuModel().containsIgnoreCase ("Apple") ? " (Apple Silicon)" : "");
+    c.publisher = "Painfilter Software & Music Production";
+    c.copyright = "Copyright 2026 Jan Nordus";
+    c.websiteLabel = "painfilter.de";
+    c.websiteUrl = juce::URL ("https://www.painfilter.de");
+    c.emailLabel = "info@painfilter.de";
+    c.emailUrl = juce::URL ("mailto:info@painfilter.de");
+    c.okText = tr ("action.ok");
+    c.closeTooltip = tr ("action.close");
+    c.licensingLine = tr ("ui.licensing");
+    about.setContent (std::move (c));
+    about.setVisible (true);
+    about.toFront (true);
+    about.grabKeyboardFocus();
+}
 
+void AppContentComponent::showLicenses()
+{
+    licenses->setVisible (true);
+    licenses->toFront (true);
+    licenses->grabKeyboardFocus();
+}
+
+void AppContentComponent::showMessage (const juce::String& title, const juce::String& text)
+{
+    message.setContent (title, text, tr ("action.ok"), tr ("action.close"));
+    message.setVisible (true);
+    message.toFront (true);
+    message.grabKeyboardFocus();
+}
+
+// ============================================================================
+// Appearance
+// ============================================================================
+
+void AppContentComponent::setDarkMode (bool dark)
+{
+    darkMode = dark;
+    pal = dark ? Design::darkPalette() : Design::lightPalette();
     menuBar.setPalette (pal);
-    sidebar.setPalette (pal);
-    viewSwitcher.setPalette (pal);
-    cardsView.setPalette (pal);
-    patchbayView.setPalette (pal);
-    controlRoomView.setPalette (pal);
-    signalFlowView.setPalette (pal);
-    detailPanel.setPalette (pal);
-    desktop.setDarkMode (darkMode);
-
-    statusLabel.setColour (juce::Label::textColourId, pal.ink.withAlpha (0.5f));
-
+    appWindow.setPalette (pal);
+    workspace.setPalette (pal);
+    desktop.setDarkMode (dark);
+    about.setDarkMode (dark);
+    message.setDarkMode (dark);
+    licenses->setDarkMode (dark);
+    if (auto* text = dynamic_cast<LicenseText*> (licenses->getContent()))
+    {
+        text->text.setColour (juce::TextEditor::backgroundColourId, pal.field);
+        text->text.setColour (juce::TextEditor::textColourId, pal.ink);
+        text->text.setColour (juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
+        text->text.applyColourToAllText (pal.ink, false);
+    }
     repaint();
 }
 
@@ -212,64 +281,48 @@ void AppContentComponent::setUiScale (double scale)
 {
     uiScale = scale;
     menuBar.setUiScale (scale);
-    sidebar.setUiScale (scale);
-    viewSwitcher.setUiScale (scale);
-    cardsView.setUiScale (scale);
-    patchbayView.setUiScale (scale);
-    controlRoomView.setUiScale (scale);
-    signalFlowView.setUiScale (scale);
-    detailPanel.setUiScale (scale);
+    appWindow.setUiScale (scale);
+    workspace.setUiScale (scale);
     desktop.setUiScale (scale);
+    about.setUiScale (scale);
+    message.setUiScale (scale);
+    licenses->setUiScale (scale);
     resized();
     repaint();
 }
 
-// ============================================================================
-// State change
-// ============================================================================
-
-void AppContentComponent::changeListenerCallback (juce::ChangeBroadcaster*)
+void AppContentComponent::refreshText()
 {
-    cardsView.setDevices (appState.getParsedDevices());
-    patchbayView.setData (appState.getParsedDevices(), appState.getDetectedPorts());
-    controlRoomView.setBuses (appState.getControlRoomBuses());
-    signalFlowView.setData (appState.getParsedDevices(), appState.getDetectedPorts());
-
-    updateStatusText();
+    menuBar.refreshText();
+    workspace.refreshText();
+    desktop.refreshText();
+    appWindow.setCollapseTooltip (tr ("ui.collapseWindow"));
+    licenses = [this]
+    {
+        // The title is fixed at construction; rebuild keeps the window simple.
+        const auto wasVisible = licenses != nullptr && licenses->isVisible();
+        auto window = std::make_unique<Design::OverlayWindow> (tr ("label.thirdPartyLicenses"),
+                                                               std::make_unique<LicenseText>(), 560, 380);
+        window->onClose = [this] { licenses->setVisible (false); };
+        window->setCloseTooltip (tr ("action.close"));
+        window->setVisible (wasVisible);
+        return window;
+    }();
+    addChildComponent (*licenses);
+    licenses->setUiScale (uiScale);
+    licenses->setBounds (getLocalBounds());
+    setDarkMode (darkMode);
+    if (about.isVisible())
+        showAbout();
+    updateTitle();
 }
 
-void AppContentComponent::updateStatusText()
+void AppContentComponent::updateTitle()
 {
-    auto* inst = appState.getSelectedInstallation();
-    if (inst == nullptr)
-    {
-        statusLabel.setText ("No Cubase installation found", juce::dontSendNotification);
-        return;
-    }
-
-    auto& devices = appState.getParsedDevices();
-    auto& ports = appState.getDetectedPorts();
-    auto& buses = appState.getControlRoomBuses();
-
-    juce::String status;
-    status << inst->displayName();
-
-    auto totalDevices = devices.instruments.size() + devices.fxDevices.size();
-    if (totalDevices > 0)
-        status << "  |  " << juce::String (totalDevices) << " devices ("
-               << juce::String (devices.instruments.size()) << " instr, "
-               << juce::String (devices.fxDevices.size()) << " FX)";
-
-    if (! ports.empty())
-        status << "  |  " << juce::String (ports.size()) << " ports";
-
-    if (! buses.empty())
-        status << "  |  " << juce::String (buses.size()) << " CR buses";
-
-    if (appState.isWatching())
-        status << "  |  Watching for changes";
-
-    statusLabel.setText (status, juce::dontSendNotification);
+    juce::String title ("StudioPatchbay");
+    if (auto* inst = appState.getSelectedInstallation())
+        title << " - " << inst->displayName();
+    appWindow.setTitle (title);
 }
 
 } // namespace StudioPatchbay

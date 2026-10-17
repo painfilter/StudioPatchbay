@@ -1,61 +1,94 @@
 #include "MainWindow.h"
 #include "StudioPatchbayTokens.h"
 #include "UI/Fonts.h"
-#include "UI/AboutDialog.h"
-#include "Model/AppSettings.h"
+#include "Localisation/Text.h"
 
 namespace StudioPatchbay
 {
 
-MainWindow::MainWindow (juce::String name)
-    : juce::DocumentWindow (name,
-                            juce::Colours::darkgrey,
-                            juce::DocumentWindow::allButtons)
+namespace
 {
-    // Apply bundled IBM Plex Sans to the LookAndFeel before any UI is drawn.
-    Fonts::applyTo (os9Laf);
+using Text::tr;
+using Menu = OS9MenuBar::Menu;
 
-    // Set as both this window's and the global default LookAndFeel.
+const juce::String commandKey (juce::CharPointer_UTF8 ("\xe2\x8c\x98"));
+
+juce::PopupMenu::Item item (int id, const juce::String& text, const juce::String& shortcut = {},
+                            bool ticked = false, bool enabled = true)
+{
+    juce::PopupMenu::Item i (text);
+    i.itemID = id;
+    i.isTicked = ticked;
+    i.isEnabled = enabled;
+    if (shortcut.isNotEmpty())
+        i.shortcutKeyDescription = commandKey + shortcut;
+    return i;
+}
+
+constexpr ViewSwitcher::View views[] = { ViewSwitcher::View::cards, ViewSwitcher::View::patchbay,
+                                         ViewSwitcher::View::controlRoom, ViewSwitcher::View::signalFlow };
+
+// Menu item ids.
+enum : int
+{
+    reloadId = 1, exportPdfId, exportPngId, quitId,
+    viewFirstId = 10,
+    zoomFirstId = 100,
+    languageSystemId = 200, languageEnglishId, languageGermanId,
+    appearanceSystemId = 210, appearanceLightId, appearanceDarkId,
+    aboutId = 300, licensesId
+};
+} // namespace
+
+MainWindow::MainWindow (juce::String name)
+    : juce::DocumentWindow (name, juce::Colours::black, juce::DocumentWindow::allButtons)
+{
+    Fonts::applyTo (os9Laf);
     setLookAndFeel (&os9Laf);
     juce::LookAndFeel::setDefaultLookAndFeel (&os9Laf);
+    setUsingNativeTitleBar (true);
 
-    // Disable native title bar – the OS9LookAndFeel draws the Platinum
-    // striped title bar via drawDocumentWindowTitleBar().
-    setUsingNativeTitleBar (false);
-
-    // Create the application content component.
-    content = new AppContentComponent();
-
-    // Wire up menu callbacks.
-    content->getMenuBar().onFileMenu    = [this] { showFileMenu(); };
-    content->getMenuBar().onViewMenu    = [this] { showViewMenu(); };
-    content->getMenuBar().onOptionsMenu = [this] { showOptionsMenu(); };
-    content->getMenuBar().onHelpMenu    = [this] { showHelpMenu(); };
-
-    setContentOwned (content, false);
-
-    // The last theme, zoom and exports; dark on first launch.
     settings = AppSettings::load();
+    Text::setLanguagePreference (settings.language);
+
+    content = new AppContentComponent (settings.lastCubaseVersion);
+    content->getMenuBar().onMenu = [this] (Menu m) { showMenu (m); };
     content->getDesktop().setActions (this);
     content->getDesktop().setRecentExports (settings.recentExports);
-    applyTheme (settings.darkMode);
+    content->onShadedChanged = [this] (bool shaded)
+    {
+        // The desktop is navigation, not a second window: the menus that act
+        // on the shown data are off while the window is collapsed.
+        content->getMenuBar().setMenuEnabled (Menu::file, ! shaded);
+        content->getMenuBar().setMenuEnabled (Menu::view, ! shaded);
+    };
+
+    const auto width = settings.windowWidth > 0 ? settings.windowWidth : Tokens::baseWidth;
+    const auto height = settings.windowHeight > 0 ? settings.windowHeight : Tokens::baseHeight;
+    content->setSize (width, height);   // logical, at zoom 1 until applyZoom
+    setContentOwned (content, true);
+
+    juce::Desktop::getInstance().addDarkModeSettingListener (this);
+    applyAppearance();
+
+    auto zoom = 1.0;
     for (auto level : Design::Scale::windowZoomLevels)
         if (juce::approximatelyEqual (level, settings.uiScale))
-            applyZoom (level);
+            zoom = level;
+    setResizable (true, false);
+    applyZoom (zoom);
 
-    setResizable (true, true);
-    // Room for the window's sidebar and views next to one column of icons.
-    setResizeLimits (760, 560, 10000, 10000);
-    centreWithSize (Tokens::baseWidth, Tokens::baseHeight);
+    centreWithSize (getWidth(), getHeight());
     setVisible (true);
-
-    // Register keyboard shortcuts.
     addKeyListener (this);
 }
 
 MainWindow::~MainWindow()
 {
+    saveSettings();
     removeKeyListener (this);
+    juce::Desktop::getInstance().removeDarkModeSettingListener (this);
+    clearContentComponent();
     juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
     setLookAndFeel (nullptr);
 }
@@ -66,81 +99,220 @@ void MainWindow::closeButtonPressed()
 }
 
 // ============================================================================
+// Size and zoom
+// ============================================================================
+
+juce::Point<int> MainWindow::logicalSize() const
+{
+    const auto scale = content->getUiScale();
+    return { juce::roundToInt (content->getWidth() / scale), juce::roundToInt (content->getHeight() / scale) };
+}
+
+void MainWindow::applyZoom (double scale)
+{
+    auto logical = logicalSize();
+    logical.x = juce::jmax (logical.x, AppContentComponent::minimumWidth);
+    logical.y = juce::jmax (logical.y, AppContentComponent::minimumHeight);
+
+    // A larger zoom must not push the window off the screen: give up desktop
+    // area first, down to the minimum, then move the window back on screen.
+    const auto* display = juce::Desktop::getInstance().getDisplays().getDisplayForRect (getScreenBounds());
+    if (display != nullptr)
+    {
+        const auto area = display->userBounds.toNearestInt();
+        logical.x = juce::jmax (AppContentComponent::minimumWidth,
+                                juce::jmin (logical.x, juce::roundToInt (area.getWidth() / scale)));
+        logical.y = juce::jmax (AppContentComponent::minimumHeight,
+                                juce::jmin (logical.y, juce::roundToInt ((area.getHeight() - 40) / scale)));
+    }
+
+    os9Laf.setUiScale (scale);
+    content->setUiScale (scale);
+    setResizeLimits (juce::roundToInt (AppContentComponent::minimumWidth * scale),
+                     juce::roundToInt (AppContentComponent::minimumHeight * scale), 16384, 16384);
+    setContentComponentSize (juce::roundToInt (logical.x * scale), juce::roundToInt (logical.y * scale));
+    if (display != nullptr && isOnDesktop())
+        setTopLeftPosition (getBounds().constrainedWithin (display->userBounds.toNearestInt()).getPosition());
+    repaint();
+}
+
+// ============================================================================
+// Appearance and language
+// ============================================================================
+
+void MainWindow::applyAppearance()
+{
+    const auto dark = settings.appearance == "dark"
+                      || (settings.appearance == "system" && juce::Desktop::getInstance().isDarkModeActive());
+    os9Laf.setDarkMode (dark);
+    content->setDarkMode (dark);
+    repaint();
+}
+
+void MainWindow::darkModeSettingChanged()
+{
+    if (settings.appearance == "system")
+        applyAppearance();
+}
+
+void MainWindow::applyLanguage (const juce::String& language)
+{
+    settings.language = language;
+    Text::setLanguagePreference (language);
+    content->refreshText();
+}
+
+void MainWindow::saveSettings()
+{
+    const auto logical = logicalSize();
+    settings.uiScale = content->getUiScale();
+    settings.windowWidth = logical.x;
+    settings.windowHeight = logical.y;
+    settings.lastCubaseVersion = content->getAppState().getPreferredVersion();
+    settings.save();
+    content->getDesktop().setRecentExports (settings.recentExports);
+}
+
+// ============================================================================
 // Keyboard shortcuts
 // ============================================================================
 
 bool MainWindow::keyPressed (const juce::KeyPress& key, juce::Component*)
 {
-    auto cmd = juce::ModifierKeys::commandModifier;
+    const auto cmd = juce::ModifierKeys::commandModifier;
 
-    // Cmd+R → Reload.
     if (key == juce::KeyPress ('r', cmd, 0))
     {
         reload();
         return true;
     }
+    if (key == juce::KeyPress ('q', cmd, 0))
+    {
+        juce::JUCEApplication::getInstance()->systemRequestedQuit();
+        return true;
+    }
+    if (content->isShaded())
+        return false;
 
-    // Cmd+1 through Cmd+4 → switch views.
-    if (key == juce::KeyPress ('1', cmd, 0))
-    {
-        content->switchToView (ViewSwitcher::View::cards);
-        return true;
-    }
-    if (key == juce::KeyPress ('2', cmd, 0))
-    {
-        content->switchToView (ViewSwitcher::View::patchbay);
-        return true;
-    }
-    if (key == juce::KeyPress ('3', cmd, 0))
-    {
-        content->switchToView (ViewSwitcher::View::controlRoom);
-        return true;
-    }
-    if (key == juce::KeyPress ('4', cmd, 0))
-    {
-        content->switchToView (ViewSwitcher::View::signalFlow);
-        return true;
-    }
-
+    for (int i = 0; i < 4; ++i)
+        if (key == juce::KeyPress ('1' + i, cmd, 0))
+        {
+            content->getWorkspace().switchToView (views[i]);
+            return true;
+        }
     return false;
 }
 
 // ============================================================================
-// Menu implementations
+// Menus
 // ============================================================================
 
-void MainWindow::showFileMenu()
+void MainWindow::showMenu (Menu which)
 {
-    juce::PopupMenu menu;
-    
-    juce::PopupMenu::Item reloadItem ("Reload Configuration");
-    reloadItem.itemID = 1;
-    reloadItem.shortcutKeyDescription = juce::String (juce::CharPointer_UTF8 ("\xe2\x8c\x98")) + "R";
-    menu.addItem (reloadItem);
-    
-    menu.addSeparator();
-    menu.addItem (2, "Export as PDF...");
-    menu.addItem (3, "Export as PNG...");
-    menu.addSeparator();
-    
-    juce::PopupMenu::Item quitItem ("Quit StudioPatchbay");
-    quitItem.itemID = 99;
-    quitItem.shortcutKeyDescription = juce::String (juce::CharPointer_UTF8 ("\xe2\x8c\x98")) + "Q";
-    menu.addItem (quitItem);
+    auto menu = [&]
+    {
+        switch (which)
+        {
+            case Menu::file:    return fileMenu();
+            case Menu::view:    return viewMenu();
+            case Menu::options: return optionsMenu();
+            case Menu::help:    break;
+        }
+        return helpMenu();
+    }();
 
-    menu.showMenuAsync (juce::PopupMenu::Options(),
+    // Detached popups do not reliably inherit the look and feel.
+    menu.setLookAndFeel (&os9Laf);
+    menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&content->getMenuBar().head (which)),
                         [this] (int result)
     {
-        if (result == 1)
-            reload();
-        else if (result == 2)
-            exportView (Export::Format::pdf, currentView());
-        else if (result == 3)
-            exportView (Export::Format::png, currentView());
-        else if (result == 99)
-            juce::JUCEApplication::getInstance()->systemRequestedQuit();
+        content->getMenuBar().menuClosed();
+
+        if (result >= viewFirstId && result < viewFirstId + 4)
+            content->getWorkspace().switchToView (views[result - viewFirstId]);
+        else if (result >= zoomFirstId && result < zoomFirstId + static_cast<int> (Design::Scale::windowZoomLevels.size()))
+            applyZoom (Design::Scale::windowZoomLevels[static_cast<size_t> (result - zoomFirstId)]);
+        else switch (result)
+        {
+            case reloadId:           reload(); break;
+            case exportPdfId:        exportView (Export::Format::pdf, currentView()); break;
+            case exportPngId:        exportView (Export::Format::png, currentView()); break;
+            case quitId:             juce::JUCEApplication::getInstance()->systemRequestedQuit(); return;
+            case languageSystemId:   applyLanguage ("system"); break;
+            case languageEnglishId:  applyLanguage ("en"); break;
+            case languageGermanId:   applyLanguage ("de"); break;
+            case appearanceSystemId: settings.appearance = "system"; applyAppearance(); break;
+            case appearanceLightId:  settings.appearance = "light"; applyAppearance(); break;
+            case appearanceDarkId:   settings.appearance = "dark"; applyAppearance(); break;
+            case aboutId:            showAbout(); return;
+            case licensesId:         content->showLicenses(); return;
+            default:                 return;
+        }
+        saveSettings();
     });
 }
+
+juce::PopupMenu MainWindow::fileMenu()
+{
+    juce::PopupMenu menu;
+    menu.addItem (item (reloadId, tr ("menu.reload"), "R"));
+    menu.addSeparator();
+    menu.addItem (item (exportPdfId, tr ("menu.exportPdf")));
+    menu.addItem (item (exportPngId, tr ("menu.exportPng")));
+    menu.addSeparator();
+    menu.addItem (item (quitId, tr ("menu.quit"), "Q"));
+    return menu;
+}
+
+juce::PopupMenu MainWindow::viewMenu()
+{
+    juce::PopupMenu menu;
+    for (int i = 0; i < 4; ++i)
+        menu.addItem (item (viewFirstId + i, ViewSwitcher::viewName (views[i]), juce::String (i + 1),
+                            currentView() == views[i]));
+    return menu;
+}
+
+juce::PopupMenu MainWindow::optionsMenu()
+{
+    juce::PopupMenu zoom;
+    for (size_t i = 0; i < Design::Scale::windowZoomLevels.size(); ++i)
+    {
+        const auto level = Design::Scale::windowZoomLevels[i];
+        zoom.addItem (item (zoomFirstId + static_cast<int> (i), juce::String (juce::roundToInt (level * 100)) + " %",
+                            {}, juce::approximatelyEqual (level, content->getUiScale())));
+    }
+
+    const auto language = Text::languagePreference();
+    juce::PopupMenu languages;
+    languages.addItem (item (languageSystemId, tr ("menu.languageSystem"), {}, language == "system"));
+    languages.addItem (item (languageEnglishId, tr ("menu.languageEnglish"), {}, language == "en"));
+    languages.addItem (item (languageGermanId, tr ("menu.languageGerman"), {}, language == "de"));
+
+    juce::PopupMenu appearance;
+    appearance.addItem (item (appearanceSystemId, tr ("menu.appearanceSystem"), {}, settings.appearance == "system"));
+    appearance.addItem (item (appearanceLightId, tr ("menu.appearanceLight"), {}, settings.appearance == "light"));
+    appearance.addItem (item (appearanceDarkId, tr ("menu.appearanceDark"), {}, settings.appearance == "dark"));
+
+    juce::PopupMenu menu;
+    menu.addSubMenu (tr ("menu.windowZoom"), zoom);
+    menu.addSubMenu (tr ("menu.language"), languages);
+    menu.addSubMenu (tr ("menu.appearance"), appearance);
+    return menu;
+}
+
+juce::PopupMenu MainWindow::helpMenu()
+{
+    juce::PopupMenu menu;
+    menu.addItem (item (aboutId, tr ("menu.about")));
+    menu.addSeparator();
+    menu.addItem (item (licensesId, tr ("menu.licenses")));
+    return menu;
+}
+
+// ============================================================================
+// Actions
+// ============================================================================
 
 void MainWindow::exportView (Export::Format format, ViewSwitcher::View view)
 {
@@ -149,7 +321,8 @@ void MainWindow::exportView (Export::Format format, ViewSwitcher::View view)
     const auto suggested = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
                                .getChildFile ("StudioPatchbay " + name + extension);
 
-    exportChooser = std::make_unique<juce::FileChooser> ("Export " + name, suggested, "*" + extension);
+    exportChooser = std::make_unique<juce::FileChooser> (tr ("desktop.exportView").replace ("%VIEW%", name),
+                                                         suggested, "*" + extension);
     const auto flags = juce::FileBrowserComponent::saveMode
                      | juce::FileBrowserComponent::canSelectFiles
                      | juce::FileBrowserComponent::warnAboutOverwriting;
@@ -162,11 +335,10 @@ void MainWindow::exportView (Export::Format format, ViewSwitcher::View view)
         if (! target.hasFileExtension (extension))
             target = target.withFileExtension (extension);
 
-        const auto result = Export::exportTo (content->exportSource (view), format, target);
+        const auto result = Export::exportTo (content->getWorkspace().exportSource (view), format, target);
         if (result.failed())
         {
-            juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon,
-                                                    "Export failed", result.getErrorMessage());
+            content->showMessage (tr ("message.exportFailed"), result.getErrorMessage());
             return;
         }
         settings.rememberExport (target);
@@ -176,7 +348,7 @@ void MainWindow::exportView (Export::Format format, ViewSwitcher::View view)
 
 ViewSwitcher::View MainWindow::currentView() const
 {
-    return content->getCurrentView();
+    return content->getWorkspace().getCurrentView();
 }
 
 void MainWindow::reload()
@@ -186,7 +358,7 @@ void MainWindow::reload()
 
 void MainWindow::showAbout()
 {
-    AboutDialog::show (content->isDarkMode() ? Design::darkPalette() : Design::lightPalette());
+    content->showAbout();
 }
 
 void MainWindow::forgetRecentExport (const juce::File& file)
@@ -195,127 +367,9 @@ void MainWindow::forgetRecentExport (const juce::File& file)
     saveSettings();
 }
 
-void MainWindow::saveSettings()
+void MainWindow::restoreWindow (juce::Rectangle<int> fromIcon)
 {
-    settings.darkMode = content->isDarkMode();
-    settings.uiScale = uiScale;
-    settings.save();
-    content->getDesktop().setRecentExports (settings.recentExports);
-}
-
-void MainWindow::showViewMenu()
-{
-    auto currentView = content->getCurrentView();
-
-    juce::PopupMenu menu;
-    
-    juce::PopupMenu::Item cardsItem ("Cards");
-    cardsItem.itemID = 1;
-    cardsItem.isTicked = (currentView == ViewSwitcher::View::cards);
-    cardsItem.shortcutKeyDescription = juce::String (juce::CharPointer_UTF8 ("\xe2\x8c\x98")) + "1";
-    menu.addItem (cardsItem);
-    
-    juce::PopupMenu::Item patchbayItem ("Patchbay Grid");
-    patchbayItem.itemID = 2;
-    patchbayItem.isTicked = (currentView == ViewSwitcher::View::patchbay);
-    patchbayItem.shortcutKeyDescription = juce::String (juce::CharPointer_UTF8 ("\xe2\x8c\x98")) + "2";
-    menu.addItem (patchbayItem);
-    
-    juce::PopupMenu::Item controlRoomItem ("Control Room");
-    controlRoomItem.itemID = 3;
-    controlRoomItem.isTicked = (currentView == ViewSwitcher::View::controlRoom);
-    controlRoomItem.shortcutKeyDescription = juce::String (juce::CharPointer_UTF8 ("\xe2\x8c\x98")) + "3";
-    menu.addItem (controlRoomItem);
-    
-    juce::PopupMenu::Item signalFlowItem ("Signal Flow");
-    signalFlowItem.itemID = 4;
-    signalFlowItem.isTicked = (currentView == ViewSwitcher::View::signalFlow);
-    signalFlowItem.shortcutKeyDescription = juce::String (juce::CharPointer_UTF8 ("\xe2\x8c\x98")) + "4";
-    menu.addItem (signalFlowItem);
-
-    menu.showMenuAsync (juce::PopupMenu::Options(),
-                        [this] (int result)
-    {
-        switch (result)
-        {
-            case 1: content->switchToView (ViewSwitcher::View::cards); break;
-            case 2: content->switchToView (ViewSwitcher::View::patchbay); break;
-            case 3: content->switchToView (ViewSwitcher::View::controlRoom); break;
-            case 4: content->switchToView (ViewSwitcher::View::signalFlow); break;
-            default: break;
-        }
-    });
-}
-
-void MainWindow::showOptionsMenu()
-{
-    juce::PopupMenu zoomMenu;
-    for (size_t i = 0; i < StudioPatchbay::Design::Scale::windowZoomLevels.size(); ++i)
-    {
-        auto level = StudioPatchbay::Design::Scale::windowZoomLevels[i];
-        auto label = juce::String (juce::roundToInt (level * 100)) + "%";
-        bool isCurrent = juce::approximatelyEqual (level, uiScale);
-        zoomMenu.addItem (static_cast<int> (100 + i), label, true, isCurrent);
-    }
-
-    juce::PopupMenu themeMenu;
-    themeMenu.addItem (200, "Dark Mode", true, content->isDarkMode());
-    themeMenu.addItem (201, "Light Mode", true, ! content->isDarkMode());
-
-    juce::PopupMenu menu;
-    menu.addSubMenu ("Window Zoom", zoomMenu);
-    menu.addSubMenu ("Theme", themeMenu);
-
-    menu.showMenuAsync (juce::PopupMenu::Options(),
-                        [this] (int result)
-    {
-        // Zoom levels: IDs 100–107
-        if (result >= 100 && result < 200)
-        {
-            auto idx = static_cast<size_t> (result - 100);
-            if (idx < StudioPatchbay::Design::Scale::windowZoomLevels.size())
-                applyZoom (StudioPatchbay::Design::Scale::windowZoomLevels[idx]);
-        }
-        else if (result == 200 || result == 201)
-        {
-            applyTheme (result == 200);
-        }
-        else
-        {
-            return;
-        }
-        saveSettings();
-    });
-}
-
-void MainWindow::applyTheme (bool dark)
-{
-    os9Laf.setDarkMode (dark);
-    content->setDarkMode (dark);
-    repaint();
-}
-
-void MainWindow::applyZoom (double scale)
-{
-    uiScale = scale;
-    os9Laf.setUiScale (scale);
-    content->setUiScale (scale);
-    repaint();
-}
-
-void MainWindow::showHelpMenu()
-{
-    juce::PopupMenu menu;
-    menu.addItem (1, "About StudioPatchbay...");
-    menu.addSeparator();
-    menu.addItem (2, "Third-Party Licenses...");
-
-    menu.showMenuAsync (juce::PopupMenu::Options(),
-                        [this] (int result)
-    {
-        if (result == 1 || result == 2)
-            showAbout();
-    });
+    content->setShaded (false, fromIcon);
 }
 
 } // namespace StudioPatchbay

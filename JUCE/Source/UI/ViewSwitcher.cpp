@@ -1,5 +1,5 @@
 #include "ViewSwitcher.h"
-#include "DesktopShelf.h"
+#include "Localisation/Text.h"
 #include "Fonts.h"
 
 namespace StudioPatchbay
@@ -119,7 +119,7 @@ void ViewSwitcher::paint (juce::Graphics& g)
         // Label.
         g.setFont (font);
         g.setColour (isActive ? pal.ink : pal.ink.withAlpha (0.6f));
-        g.drawText (tabs[static_cast<size_t> (i)].label,
+        g.drawText (viewName (tabs[static_cast<size_t> (i)].view),
                     bounds.reduced (slant, 0).withTrimmedTop (isActive ? 0 : sc (3)),
                     juce::Justification::centred);
     }
@@ -136,32 +136,16 @@ void ViewSwitcher::mouseDown (const juce::MouseEvent& e)
         setActiveView (tabs[static_cast<size_t> (idx)].view);
 }
 
-void ViewSwitcher::mouseDrag (const juce::MouseEvent& e)
-{
-    // Pulling a tab away from the bar drags that view, e.g. onto an export
-    // program on the desktop.
-    if (e.getDistanceFromDragStart() < sc (6))
-        return;
-    const auto idx = tabIndexAtX (e.getMouseDownX());
-    auto* container = juce::DragAndDropContainer::findParentDragContainerFor (this);
-    if (container == nullptr || container->isDragAndDropActive()
-        || idx < 0 || idx >= static_cast<int> (tabs.size()))
-        return;
-    const auto bounds = tabBounds (idx);
-    container->startDragging (DesktopShelf::describeViewDrag (tabs[static_cast<size_t> (idx)].view), this,
-                              juce::ScaledImage (createComponentSnapshot (bounds)));
-}
-
 juce::String ViewSwitcher::viewName (View view)
 {
     switch (view)
     {
-        case View::cards:       return "Cards";
-        case View::patchbay:    return "Patchbay";
-        case View::controlRoom: return "Control Room";
-        case View::signalFlow:  return "Signal Flow";
+        case View::cards:       return Text::tr ("view.cards");
+        case View::patchbay:    return Text::tr ("view.patchbay");
+        case View::controlRoom: return Text::tr ("view.controlRoom");
+        case View::signalFlow:  return Text::tr ("view.signalFlow");
     }
-    return "View";
+    return {};
 }
 
 } // namespace StudioPatchbay
