@@ -32,6 +32,8 @@ bool flag (const juce::Button& b, const char* name)
 {
     return static_cast<bool> (b.getProperties().getWithDefault (name, false));
 }
+
+std::function<juce::Font (double, int)> chromeFontProvider;
 }
 
 PlatinumLookAndFeel::PlatinumLookAndFeel()
@@ -45,11 +47,6 @@ void PlatinumLookAndFeel::setDarkMode (bool shouldUseDarkMode)
     darkMode = shouldUseDarkMode;
     pal = darkMode ? darkPalette() : lightPalette();
     refreshColours();
-}
-
-namespace
-{
-    std::function<juce::Font (double, int)> chromeFontProvider;
 }
 
 void setChromeFontProvider (std::function<juce::Font (double, int)> provider)

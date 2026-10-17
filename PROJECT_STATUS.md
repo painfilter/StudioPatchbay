@@ -22,6 +22,12 @@ for tests; Cubase does not run there).
     macOS: `~/Library/Preferences/Cubase NN/`.
   - Reload re-reads the files and keeps the selected installation.
   - Theme and zoom are remembered (`AppSettings`, versioned settings file).
+- **Desktop** (`UI/DesktopShelf`, layout in `Layout/DesktopLayout`): icons at the
+  right edge for each Cubase installation (click selects, context menu opens the
+  preferences folder), PDF/PNG export programs (click exports the active view,
+  drop a view tab to export that view), the watcher (click reloads, context menu
+  toggles watching), the last three exported documents (open / show / remove),
+  and the trash, which opens About. The sidebar list stays.
 - **Look and feel:** `JUCE/Source/Design/` is generated; do not edit by hand.
 - **CI:** `.github/workflows/ci.yml` builds and tests on Linux (tests only),
   macOS (universal app + tests) and Windows x64 (app + tests), and uploads
@@ -29,7 +35,8 @@ for tests; Cubase does not run there).
 
 ### Tests
 Catch2, run by `ctest`: parsers, Cubase folder detection (both platform
-spellings), app data directory, PDF writer (structure, xref offsets, pixel round-trip).
+spellings), app data directory, PDF writer (structure, xref offsets, pixel
+round-trip), desktop layout (columns, trash position, zoom).
 
 ### Remaining Work / Next Tasks
 1. Manual test on a real Cubase setup on macOS and on Windows (detection,

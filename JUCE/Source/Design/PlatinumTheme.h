@@ -62,11 +62,22 @@ namespace Metrics
 {
 inline constexpr int menuBarHeight = 27;
 inline constexpr int menuClockWidth = 84;
+inline constexpr int desktopTileWidth = 96;
+inline constexpr int desktopTileHeight = 72;
+inline constexpr int desktopTileCornerRadius = 3;
+inline constexpr int desktopTileHorizontalStep = 112;
+inline constexpr int desktopTileVerticalStep = 88;
+inline constexpr int desktopIconWidth = 32;
+inline constexpr int desktopIconHeight = 27;
 }
 
 namespace Interaction
 {
 inline constexpr double menuClockDateDisplayMs = 3600.0;
+inline constexpr float desktopTileHoverFillAlphaLight = 0.54f;
+inline constexpr float desktopTileHoverFillAlphaDark = 0.82f;
+inline constexpr float desktopTileSelectedFillAlpha = 0.1f;
+inline constexpr float desktopTileSelectedOutlineAlpha = 0.8f;
 }
 
 namespace Scale

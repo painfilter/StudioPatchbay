@@ -25,6 +25,9 @@ public:
 
     void paint (juce::Graphics& g) override;
     void mouseDown (const juce::MouseEvent& e) override;
+    void mouseDrag (const juce::MouseEvent& e) override;
+
+    static juce::String viewName (View view);
 
     void setPalette (const StudioPatchbay::Design::Palette& newPalette);
     void setUiScale (double scale);

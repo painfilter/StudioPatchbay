@@ -14,6 +14,7 @@ AppContentComponent::AppContentComponent()
     addAndMakeVisible (controlRoomView);
     addAndMakeVisible (signalFlowView);
     addAndMakeVisible (statusLabel);
+    addAndMakeVisible (desktop);
 
     menuBar.setPalette (pal);
     sidebar.setPalette (pal);
@@ -62,9 +63,7 @@ void AppContentComponent::paint (juce::Graphics& g)
 {
     const auto barH = sc (StudioPatchbay::Design::Metrics::menuBarHeight);
 
-    auto contentArea = getLocalBounds();
-    contentArea.removeFromTop (barH + sc (4));
-    contentArea.reduce (sc (6), sc (4));
+    const auto contentArea = desktopLayout.window;
 
     // The desktop shows only around the content frame: paint it there and
     // nowhere else, so a small repaint (the menu clock) stays small.
@@ -110,8 +109,10 @@ void AppContentComponent::resized()
 
     menuBar.setBounds (area.removeFromTop (barH));
 
-    area.removeFromTop (sc (4));
-    area.reduce (sc (6), sc (4));
+    // The window shares the desktop with the icons at the right edge.
+    desktopLayout = DesktopLayout::compute (area, desktop.itemCount(), uiScale);
+    desktop.place (desktopLayout);
+    area = desktopLayout.window;
 
     // Status bar at the bottom.
     auto statusArea = area.removeFromBottom (sc (22));
@@ -161,21 +162,8 @@ void AppContentComponent::showActiveView()
 // Export
 // ============================================================================
 
-juce::String AppContentComponent::viewName (ViewSwitcher::View view)
+Export::ExportSource AppContentComponent::exportSource (ViewSwitcher::View view)
 {
-    switch (view)
-    {
-        case ViewSwitcher::View::cards:       return "Cards";
-        case ViewSwitcher::View::patchbay:    return "Patchbay";
-        case ViewSwitcher::View::controlRoom: return "Control Room";
-        case ViewSwitcher::View::signalFlow:  return "Signal Flow";
-    }
-    return "View";
-}
-
-Export::ExportSource AppContentComponent::activeExportSource()
-{
-    const auto view = viewSwitcher.getActiveView();
     auto& content = [&]() -> juce::Component&
     {
         switch (view)
@@ -188,7 +176,7 @@ Export::ExportSource AppContentComponent::activeExportSource()
         return cardsView.getExportContent();
     }();
 
-    juce::String title ("StudioPatchbay - " + viewName (view));
+    juce::String title ("StudioPatchbay - " + ViewSwitcher::viewName (view));
     if (auto* inst = appState.getSelectedInstallation())
         title << " - " << inst->displayName();
 
@@ -213,6 +201,7 @@ void AppContentComponent::setDarkMode (bool shouldUseDarkMode)
     controlRoomView.setPalette (pal);
     signalFlowView.setPalette (pal);
     detailPanel.setPalette (pal);
+    desktop.setDarkMode (darkMode);
 
     statusLabel.setColour (juce::Label::textColourId, pal.ink.withAlpha (0.5f));
 
@@ -230,6 +219,7 @@ void AppContentComponent::setUiScale (double scale)
     controlRoomView.setUiScale (scale);
     signalFlowView.setUiScale (scale);
     detailPanel.setUiScale (scale);
+    desktop.setUiScale (scale);
     resized();
     repaint();
 }

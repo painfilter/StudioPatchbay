@@ -14,6 +14,10 @@ struct AppSettings
 
     bool darkMode = true;
     double uiScale = 1.0;
+    juce::StringArray recentExports;   // full paths, newest first
+
+    static constexpr int maxRecentExports = 3;
+    void rememberExport (const juce::File&);
 
     static AppSettings load();
     void save() const;

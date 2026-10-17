@@ -161,6 +161,12 @@ void SidebarPanel::listBoxItemClicked (int row, const juce::MouseEvent&)
 void SidebarPanel::changeListenerCallback (juce::ChangeBroadcaster*)
 {
     listBox.updateContent();
+    // The selection can also change from the desktop icons; follow it.
+    const auto selected = appState.getSelectedIndex();
+    if (selected < 0)
+        listBox.deselectAllRows();
+    else if (listBox.getSelectedRow() != selected)
+        listBox.selectRow (selected);
     listBox.repaint();
 }
 

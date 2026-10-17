@@ -29,7 +29,17 @@ AppSettings AppSettings::load()
 
     settings.darkMode = file->getBoolValue ("darkMode", settings.darkMode);
     settings.uiScale = file->getDoubleValue ("uiScale", settings.uiScale);
+    settings.recentExports.addLines (file->getValue ("recentExports"));
+    settings.recentExports.removeEmptyStrings();
     return settings;
+}
+
+void AppSettings::rememberExport (const juce::File& file)
+{
+    recentExports.removeString (file.getFullPathName());
+    recentExports.insert (0, file.getFullPathName());
+    while (recentExports.size() > maxRecentExports)
+        recentExports.remove (recentExports.size() - 1);
 }
 
 void AppSettings::save() const
@@ -41,6 +51,7 @@ void AppSettings::save() const
     file->setValue ("formatVersion", formatVersion);
     file->setValue ("darkMode", darkMode);
     file->setValue ("uiScale", uiScale);
+    file->setValue ("recentExports", recentExports.joinIntoString ("\n"));
     file->saveIfNeeded();
 }
 

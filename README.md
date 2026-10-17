@@ -94,7 +94,10 @@ ctest --test-dir build -C Release --output-on-failure
 Cubase's preferences are read from `~/Library/Preferences/Cubase NN/` on macOS
 and `%APPDATA%\Steinberg\Cubase NN_64\` on Windows (version 12 or later).
 **File > Export as PDF/PNG** saves the current view in full, including the
-parts scrolled out of sight.
+parts scrolled out of sight. The same exports sit on the desktop as icons;
+drag a view tab onto one to export that view. The desktop also shows each
+Cubase installation, the file watcher, your last exports, and the trash, which
+opens About.
 
 ## Why no sandbox?
 

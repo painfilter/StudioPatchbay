@@ -12,6 +12,8 @@
 #include "UI/SignalFlowView.h"
 #include "UI/DeviceDetailPanel.h"
 #include "Export/ViewExporter.h"
+#include "UI/DesktopShelf.h"
+#include "Layout/DesktopLayout.h"
 
 namespace StudioPatchbay
 {
@@ -19,6 +21,7 @@ namespace StudioPatchbay
 // Root content component for the StudioPatchbay application window.
 // Owns the OS9 menu bar, sidebar, view tabs, and all view components.
 class AppContentComponent : public juce::Component,
+                            public juce::DragAndDropContainer,
                             private juce::ChangeListener
 {
 public:
@@ -39,9 +42,10 @@ public:
     void switchToView (ViewSwitcher::View view) { viewSwitcher.setActiveView (view); showActiveView(); }
     ViewSwitcher::View getCurrentView() const { return viewSwitcher.getActiveView(); }
 
-    // The active view's complete content, for File > Export.
-    Export::ExportSource activeExportSource();
-    static juce::String viewName (ViewSwitcher::View view);
+    // A view's complete content, for export.
+    Export::ExportSource exportSource (ViewSwitcher::View view);
+
+    DesktopShelf& getDesktop() { return desktop; }
 
 private:
     void changeListenerCallback (juce::ChangeBroadcaster* source) override;
@@ -67,6 +71,8 @@ private:
     ControlRoomView controlRoomView;
     SignalFlowView signalFlowView;
     DeviceDetailPanel detailPanel;
+    DesktopShelf desktop { appState };
+    DesktopLayout desktopLayout;
 
     juce::Label statusLabel;
 

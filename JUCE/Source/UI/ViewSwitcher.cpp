@@ -1,4 +1,5 @@
 #include "ViewSwitcher.h"
+#include "DesktopShelf.h"
 #include "Fonts.h"
 
 namespace StudioPatchbay
@@ -133,6 +134,34 @@ void ViewSwitcher::mouseDown (const juce::MouseEvent& e)
     int idx = tabIndexAtX (e.x);
     if (idx >= 0 && idx < static_cast<int> (tabs.size()))
         setActiveView (tabs[static_cast<size_t> (idx)].view);
+}
+
+void ViewSwitcher::mouseDrag (const juce::MouseEvent& e)
+{
+    // Pulling a tab away from the bar drags that view, e.g. onto an export
+    // program on the desktop.
+    if (e.getDistanceFromDragStart() < sc (6))
+        return;
+    const auto idx = tabIndexAtX (e.getMouseDownX());
+    auto* container = juce::DragAndDropContainer::findParentDragContainerFor (this);
+    if (container == nullptr || container->isDragAndDropActive()
+        || idx < 0 || idx >= static_cast<int> (tabs.size()))
+        return;
+    const auto bounds = tabBounds (idx);
+    container->startDragging (DesktopShelf::describeViewDrag (tabs[static_cast<size_t> (idx)].view), this,
+                              juce::ScaledImage (createComponentSnapshot (bounds)));
+}
+
+juce::String ViewSwitcher::viewName (View view)
+{
+    switch (view)
+    {
+        case View::cards:       return "Cards";
+        case View::patchbay:    return "Patchbay";
+        case View::controlRoom: return "Control Room";
+        case View::signalFlow:  return "Signal Flow";
+    }
+    return "View";
 }
 
 } // namespace StudioPatchbay

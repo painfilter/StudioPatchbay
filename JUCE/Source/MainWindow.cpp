@@ -34,14 +34,18 @@ MainWindow::MainWindow (juce::String name)
 
     setContentOwned (content, false);
 
-    // The last theme and zoom; dark on first launch.
-    const auto settings = AppSettings::load();
+    // The last theme, zoom and exports; dark on first launch.
+    settings = AppSettings::load();
+    content->getDesktop().setActions (this);
+    content->getDesktop().setRecentExports (settings.recentExports);
     applyTheme (settings.darkMode);
     for (auto level : Design::Scale::windowZoomLevels)
         if (juce::approximatelyEqual (level, settings.uiScale))
             applyZoom (level);
 
     setResizable (true, true);
+    // Room for the window's sidebar and views next to one column of icons.
+    setResizeLimits (760, 560, 10000, 10000);
     centreWithSize (Tokens::baseWidth, Tokens::baseHeight);
     setVisible (true);
 
@@ -72,7 +76,7 @@ bool MainWindow::keyPressed (const juce::KeyPress& key, juce::Component*)
     // Cmd+R → Reload.
     if (key == juce::KeyPress ('r', cmd, 0))
     {
-        content->getAppState().rescanInstallations();
+        reload();
         return true;
     }
 
@@ -128,30 +132,29 @@ void MainWindow::showFileMenu()
                         [this] (int result)
     {
         if (result == 1)
-            content->getAppState().rescanInstallations();
+            reload();
         else if (result == 2)
-            exportActiveView (Export::Format::pdf);
+            exportView (Export::Format::pdf, currentView());
         else if (result == 3)
-            exportActiveView (Export::Format::png);
+            exportView (Export::Format::png, currentView());
         else if (result == 99)
             juce::JUCEApplication::getInstance()->systemRequestedQuit();
     });
 }
 
-void MainWindow::exportActiveView (Export::Format format)
+void MainWindow::exportView (Export::Format format, ViewSwitcher::View view)
 {
     const auto extension = format == Export::Format::pdf ? juce::String (".pdf") : juce::String (".png");
+    const auto name = ViewSwitcher::viewName (view);
     const auto suggested = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
-                               .getChildFile ("StudioPatchbay " + AppContentComponent::viewName (content->getCurrentView())
-                                              + extension);
+                               .getChildFile ("StudioPatchbay " + name + extension);
 
-    exportChooser = std::make_unique<juce::FileChooser> ("Export " + AppContentComponent::viewName (content->getCurrentView()),
-                                                         suggested, "*" + extension);
+    exportChooser = std::make_unique<juce::FileChooser> ("Export " + name, suggested, "*" + extension);
     const auto flags = juce::FileBrowserComponent::saveMode
                      | juce::FileBrowserComponent::canSelectFiles
                      | juce::FileBrowserComponent::warnAboutOverwriting;
 
-    exportChooser->launchAsync (flags, [this, format, extension] (const juce::FileChooser& chooser)
+    exportChooser->launchAsync (flags, [this, format, view, extension] (const juce::FileChooser& chooser)
     {
         auto target = chooser.getResult();
         if (target == juce::File())
@@ -159,11 +162,45 @@ void MainWindow::exportActiveView (Export::Format format)
         if (! target.hasFileExtension (extension))
             target = target.withFileExtension (extension);
 
-        const auto result = Export::exportTo (content->activeExportSource(), format, target);
+        const auto result = Export::exportTo (content->exportSource (view), format, target);
         if (result.failed())
+        {
             juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon,
                                                     "Export failed", result.getErrorMessage());
+            return;
+        }
+        settings.rememberExport (target);
+        saveSettings();
     });
+}
+
+ViewSwitcher::View MainWindow::currentView() const
+{
+    return content->getCurrentView();
+}
+
+void MainWindow::reload()
+{
+    content->getAppState().rescanInstallations();
+}
+
+void MainWindow::showAbout()
+{
+    AboutDialog::show (content->isDarkMode() ? Design::darkPalette() : Design::lightPalette());
+}
+
+void MainWindow::forgetRecentExport (const juce::File& file)
+{
+    settings.recentExports.removeString (file.getFullPathName());
+    saveSettings();
+}
+
+void MainWindow::saveSettings()
+{
+    settings.darkMode = content->isDarkMode();
+    settings.uiScale = uiScale;
+    settings.save();
+    content->getDesktop().setRecentExports (settings.recentExports);
 }
 
 void MainWindow::showViewMenu()
@@ -247,7 +284,7 @@ void MainWindow::showOptionsMenu()
         {
             return;
         }
-        AppSettings { content->isDarkMode(), uiScale }.save();
+        saveSettings();
     });
 }
 
@@ -268,20 +305,16 @@ void MainWindow::applyZoom (double scale)
 
 void MainWindow::showHelpMenu()
 {
-    auto currentPal = content->isDarkMode()
-        ? StudioPatchbay::Design::darkPalette()
-        : StudioPatchbay::Design::lightPalette();
-
     juce::PopupMenu menu;
     menu.addItem (1, "About StudioPatchbay...");
     menu.addSeparator();
     menu.addItem (2, "Third-Party Licenses...");
 
     menu.showMenuAsync (juce::PopupMenu::Options(),
-                        [currentPal] (int result)
+                        [this] (int result)
     {
         if (result == 1 || result == 2)
-            AboutDialog::show (currentPal);
+            showAbout();
     });
 }
 

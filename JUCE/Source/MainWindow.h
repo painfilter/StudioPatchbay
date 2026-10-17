@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "Design/PlatinumLookAndFeel.h"
 #include "AppContentComponent.h"
+#include "Model/AppSettings.h"
 
 namespace StudioPatchbay
 {
@@ -11,7 +12,8 @@ namespace StudioPatchbay
 // and menu callbacks. Implements KeyListener for Cmd+R (Reload),
 // Cmd+1-4 (view switching), and Cmd+Q (quit).
 class MainWindow : public juce::DocumentWindow,
-                   public juce::KeyListener
+                   public juce::KeyListener,
+                   private DesktopActions
 {
 public:
     MainWindow (juce::String name);
@@ -30,13 +32,21 @@ private:
     void showViewMenu();
     void showOptionsMenu();
     void showHelpMenu();
-    void exportActiveView (Export::Format format);
+    // DesktopActions; the menus use the same commands.
+    ViewSwitcher::View currentView() const override;
+    void exportView (Export::Format, ViewSwitcher::View) override;
+    void reload() override;
+    void showAbout() override;
+    void forgetRecentExport (const juce::File&) override;
+
+    void saveSettings();
     void applyTheme (bool dark);
     void applyZoom (double scale);
 
     StudioPatchbay::Design::PlatinumLookAndFeel os9Laf;
     AppContentComponent* content = nullptr;
     double uiScale = 1.0;
+    AppSettings settings;
     std::unique_ptr<juce::FileChooser> exportChooser;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)

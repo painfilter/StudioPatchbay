@@ -80,6 +80,10 @@ set(SP_SOURCES
     Source/UI/AboutDialog.cpp
     Source/Export/ViewExporter.cpp
     Source/Model/AppSettings.cpp
+    Source/Layout/DesktopLayout.cpp
+    Source/UI/DesktopIcons.cpp
+    Source/UI/DesktopShelf.cpp
+    Source/Design/PlatinumDesktopTile.cpp
     Source/Design/PlatinumLookAndFeel.cpp
     ${SP_CORE_SOURCES}
 )
@@ -115,6 +119,8 @@ target_sources(StudioPatchbayTests PRIVATE
     Tests/ParserTests.cpp
     Tests/PlatformPathsTests.cpp
     Tests/PdfWriterTests.cpp
+    Tests/DesktopLayoutTests.cpp
+    Source/Layout/DesktopLayout.cpp
     ${SP_CORE_SOURCES}
 )
 target_include_directories(StudioPatchbayTests PRIVATE Source)
@@ -126,6 +132,7 @@ target_link_libraries(StudioPatchbayTests
     PRIVATE
         Catch2::Catch2WithMain
         juce::juce_core
+        juce::juce_graphics
     PUBLIC
         juce::juce_recommended_config_flags
 )
@@ -147,5 +154,6 @@ set_source_files_properties(
     Tests/ParserTests.cpp
     Tests/PlatformPathsTests.cpp
     Tests/PdfWriterTests.cpp
+    Tests/DesktopLayoutTests.cpp
     PROPERTIES COMPILE_OPTIONS "${SP_WARNING_FLAGS}"
 )
