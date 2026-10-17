@@ -1,41 +1,36 @@
 #pragma once
 
-#include <juce_gui_basics/juce_gui_basics.h>
-#include "Design/PlatinumLookAndFeel.h"
-#include "Model/DataModel.h"
+#include "ViewData.h"
 
 namespace StudioPatchbay
 {
 
-// Control Room view showing the configured monitor buses from
-// Cubase's ControlRoom/Default.xml. Each bus is displayed as an
-// OS9-style inset panel with bus name, type, and channel assignment.
-class ControlRoomView : public juce::Component
+// The Control Room view of the Swift app: a card per monitor bus with its
+// path from Cubase's Control Room to each channel's converter and physical
+// output, or "direct hardware output" when no converter is involved.
+class ControlRoomView : public ContentView
 {
 public:
-    ControlRoomView();
+    explicit ControlRoomView (const ViewData&);
 
-    void paint (juce::Graphics& g) override;
-    void resized() override;
-
-    void setBuses (const std::vector<ControlRoomBus>& buses);
-
-    void setPalette (const StudioPatchbay::Design::Palette& newPalette);
-    void setUiScale (double scale);
-
-    // The whole scrolled content, for export.
-    juce::Component& getExportContent() { return *this; }
+    void refresh() override;
+    juce::Component& getExportContent() override { return page; }
 
 private:
-    int sc (int value) const;
-    static juce::String kindLabel (ControlRoomBus::Kind kind);
+    class Page : public juce::Component
+    {
+    public:
+        explicit Page (ControlRoomView& o) : owner (o) {}
+        void paint (juce::Graphics& g) override { owner.layout (&g); }
+    private:
+        ControlRoomView& owner;
+    };
 
-    StudioPatchbay::Design::Palette pal = StudioPatchbay::Design::darkPalette();
-    double uiScale = 1.0;
+    int layout (juce::Graphics*);
+    int busCard (juce::Graphics*, const ControlRoomBus&, juce::Rectangle<int>) const;
+    juce::StringArray routes (const ControlRoomBus&) const;
 
-    std::vector<ControlRoomBus> currentBuses;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ControlRoomView)
+    Page page { *this };
 };
 
 } // namespace StudioPatchbay

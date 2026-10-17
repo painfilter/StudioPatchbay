@@ -48,6 +48,23 @@ for tests; Cubase does not run there).
   a Cubase version switch and optional interface names. Improvements over
   Swift: a new device starts on free channels; an unreadable devices file is
   set aside before the next save instead of being overwritten.
+- **Views (stage 3), as in the Swift app:** sidebar with Cubase version (only
+  installations with External Plugins.xml can be chosen; the last choice is
+  remembered), filter (All, Instruments, External FX, Send Only, Stereo, Mono,
+  Has MIDI), view and setup link; toolbar with Back/Forward, counts and search
+  (name, MIDI device, channel number, physical device name; Return or the match
+  count jumps to the next match in the patchbay); watch status, Reload and the
+  content zoom 60-200 % (remembered). Cards in three sections; Patchbay by port,
+  converter block (OUT above IN, physical I/O numbers, Cubase channel below),
+  audio interfaces and Control Room, hover details, click to select, several
+  devices on one channel cycle; Control Room cards with routes; the detail
+  panel with signal flow (nodes jump to their channel) and details. Empty and
+  error states as in Swift. Logic in `Model/Browsing`, `Model/PatchbayLayout`,
+  `Model/SignalFlow` (tested). Improvements: long rows wrap instead of being
+  cut, View menu and shortcuts for Back/Forward (Cmd+[ ]), Search (Cmd+F),
+  zoom (Cmd+ +/-/0) and Converters & Interfaces (Cmd+,). The separate
+  Signal Flow tab of the earlier JUCE draft is gone: the flow is in the detail
+  panel, as in Swift.
 - **Texts:** `JUCE/Resources/Localization/StudioPatchbay.<lang>.json` (product)
   and `common.<lang>.json` (generated, do not edit).
 - **Look and feel:** `JUCE/Source/Design/` is generated; do not edit by hand.
@@ -62,13 +79,14 @@ round-trip), settings (v1 migration, round trip, newer files untouched),
 texts (English and German have the same keys; every key the code uses exists),
 physical devices (ownership per direction, range labels, conflicts, import
 check, free start channels, reading a Swift-written file), ports (pairing,
-label fallbacks), device store (first launch, labels, unreadable file).
+label fallbacks), device store (first launch, labels, unreadable file),
+search and filter, navigation history, patchbay blocks (asymmetric and
+one-way devices, audio interfaces left out, overlapping ports), signal flow.
 
 ### Remaining Work / Next Tasks
 1. Manual test on a real Cubase setup on macOS and on Windows (detection,
    live reload, export, dark/light, every zoom level).
-2. Stage 3: views 1:1 (patchbay by port and
-   device, filter, search with jump, back/forward, content zoom). Stage 4:
+2. Stage 4:
    export as in the Swift app (patchbay with "Connected" table).
 3. Release packaging: macOS signing + notarisation (`packaging/release.sh` is
    for the Swift app), Windows code signing / installer.

@@ -1,67 +1,58 @@
 #pragma once
 
-#include <juce_gui_basics/juce_gui_basics.h>
-#include "Design/PlatinumLookAndFeel.h"
-#include "Model/DataModel.h"
-#include "DeviceCardView.h"
+#include "ViewData.h"
 
 namespace StudioPatchbay
 {
 
-// Grid layout of DeviceCardViews inside a scrollable viewport.
-// Groups devices by type: Instruments first, then External FX.
-// Each group has an OS9-style section header.
-class CardsView : public juce::Component
+// The Cards view of the Swift app: Instruments, External FX and FX Sends
+// (synth routing), each a grid of cards (200–360 px wide at 100 %). A card
+// shows name, type, ports, format, its channel rows, the physical devices
+// on its channels, its MIDI device and a warning when send and return
+// differ. Click selects (and opens the detail panel); again deselects.
+class CardsView : public ContentView
 {
 public:
-    CardsView();
+    explicit CardsView (const ViewData&);
 
-    void paint (juce::Graphics& g) override;
-    void resized() override;
-
-    // Update the displayed devices (called when AppState changes).
-    void setDevices (const ParsedDevices& devices);
-
-    void setPalette (const StudioPatchbay::Design::Palette& newPalette);
-    void setUiScale (double scale);
-
-    // Callback when a device card is clicked.
-    std::function<void (const ParsedDevice&)> onDeviceClicked;
-
-    // The whole scrolled content, for export.
-    juce::Component& getExportContent() { return cardContainer; }
+    void refresh() override;
+    juce::Component& getExportContent() override { return page; }
 
 private:
-    int sc (int value) const;
-    void rebuildCards();
-    int layoutCards(); // returns total content height
-
-    StudioPatchbay::Design::Palette pal = StudioPatchbay::Design::darkPalette();
-    double uiScale = 1.0;
-
-    ParsedDevices currentDevices;
-    juce::OwnedArray<DeviceCardView> cards;
-
-    // Inner component to hold the cards and section headers (scrolled by viewport).
-    struct CardContainer : public juce::Component
+    struct Placed
     {
-        struct Header
-        {
-            juce::String title;
-            juce::Rectangle<int> bounds;
-        };
-
-        void paint (juce::Graphics& g) override;
-
-        StudioPatchbay::Design::Palette pal = StudioPatchbay::Design::darkPalette();
-        double uiScale = 1.0;
-        std::vector<Header> headers;
+        ParsedDevice device;
+        juce::Rectangle<int> bounds;
+    };
+    struct Section
+    {
+        juce::String title;
+        juce::Colour colour;
+        int count;
+        int y;
     };
 
-    CardContainer cardContainer;
-    juce::Viewport viewport;
+    class Page : public juce::Component
+    {
+    public:
+        explicit Page (CardsView& o) : owner (o) {}
+        void paint (juce::Graphics&) override;
+        void mouseMove (const juce::MouseEvent&) override;
+        void mouseExit (const juce::MouseEvent&) override;
+        void mouseUp (const juce::MouseEvent&) override;
+        int hovered = -1;
+    private:
+        int cardAt (juce::Point<int>) const;
+        CardsView& owner;
+    };
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CardsView)
+    // Draws a card into `area` (or only measures it when g is null) and
+    // returns its height.
+    int card (juce::Graphics*, const ParsedDevice&, juce::Rectangle<int> area, bool hover) const;
+
+    Page page { *this };
+    std::vector<Placed> cards;
+    std::vector<Section> sections;
 };
 
 } // namespace StudioPatchbay

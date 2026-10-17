@@ -26,13 +26,15 @@ juce::PopupMenu::Item item (int id, const juce::String& text, const juce::String
 }
 
 constexpr ViewSwitcher::View views[] = { ViewSwitcher::View::cards, ViewSwitcher::View::patchbay,
-                                         ViewSwitcher::View::controlRoom, ViewSwitcher::View::signalFlow };
+                                         ViewSwitcher::View::controlRoom };
+constexpr int viewCount = 3;
 
 // Menu item ids.
 enum : int
 {
     reloadId = 1, exportPdfId, exportPngId, quitId,
     viewFirstId = 10,
+    backId = 20, forwardId, zoomInId, zoomOutId, zoomResetId, findId,
     zoomFirstId = 100,
     languageSystemId = 200, languageEnglishId, languageGermanId,
     appearanceSystemId = 210, appearanceLightId, appearanceDarkId,
@@ -53,6 +55,9 @@ MainWindow::MainWindow (juce::String name)
     Text::setLanguagePreference (settings.language);
 
     content = new AppContentComponent (settings.lastCubaseVersion);
+    content->getWorkspace().setContentScale (settings.contentScale);
+    content->getWorkspace().onContentScaleChanged = [this] (double) { saveSettings(); };
+    content->getWorkspace().onOpenSetup = [this] { showDeviceManager(); };
     content->getMenuBar().onMenu = [this] (Menu m) { showMenu (m); };
     content->getDesktop().setActions (this);
     content->getDesktop().setRecentExports (settings.recentExports);
@@ -82,6 +87,10 @@ MainWindow::MainWindow (juce::String name)
     centreWithSize (getWidth(), getHeight());
     setVisible (true);
     addKeyListener (this);
+
+    // Start with the desktop focused, not the search field.
+    content->setWantsKeyboardFocus (true);
+    content->grabKeyboardFocus();
 }
 
 MainWindow::~MainWindow()
@@ -170,6 +179,7 @@ void MainWindow::saveSettings()
     settings.windowWidth = logical.x;
     settings.windowHeight = logical.y;
     settings.lastCubaseVersion = content->getAppState().getPreferredVersion();
+    settings.contentScale = content->getWorkspace().getContentScale();
     settings.save();
     content->getDesktop().setRecentExports (settings.recentExports);
 }
@@ -192,15 +202,31 @@ bool MainWindow::keyPressed (const juce::KeyPress& key, juce::Component*)
         juce::JUCEApplication::getInstance()->systemRequestedQuit();
         return true;
     }
+    if (key == juce::KeyPress (',', cmd, 0))
+    {
+        showDeviceManager();
+        return true;
+    }
     if (content->isShaded())
         return false;
 
-    for (int i = 0; i < 4; ++i)
+    auto& workspace = content->getWorkspace();
+    for (int i = 0; i < viewCount; ++i)
         if (key == juce::KeyPress ('1' + i, cmd, 0))
         {
-            content->getWorkspace().switchToView (views[i]);
+            workspace.switchToView (views[i]);
             return true;
         }
+    if (key == juce::KeyPress ('[', cmd, 0)) { workspace.goBack(); return true; }
+    if (key == juce::KeyPress (']', cmd, 0)) { workspace.goForward(); return true; }
+    if (key == juce::KeyPress ('f', cmd, 0)) { workspace.focusSearch(); return true; }
+    if (key == juce::KeyPress ('=', cmd, 0) || key == juce::KeyPress ('+', cmd, 0))
+    {
+        workspace.setContentScale (workspace.getContentScale() + 0.1);
+        return true;
+    }
+    if (key == juce::KeyPress ('-', cmd, 0)) { workspace.setContentScale (workspace.getContentScale() - 0.1); return true; }
+    if (key == juce::KeyPress ('0', cmd, 0)) { workspace.setContentScale (1.0); return true; }
     return false;
 }
 
@@ -229,12 +255,19 @@ void MainWindow::showMenu (Menu which)
     {
         content->getMenuBar().menuClosed();
 
-        if (result >= viewFirstId && result < viewFirstId + 4)
-            content->getWorkspace().switchToView (views[result - viewFirstId]);
+        auto& workspace = content->getWorkspace();
+        if (result >= viewFirstId && result < viewFirstId + viewCount)
+            workspace.switchToView (views[result - viewFirstId]);
         else if (result >= zoomFirstId && result < zoomFirstId + static_cast<int> (Design::Scale::windowZoomLevels.size()))
             applyZoom (Design::Scale::windowZoomLevels[static_cast<size_t> (result - zoomFirstId)]);
         else switch (result)
         {
+            case backId:             workspace.goBack(); return;
+            case forwardId:          workspace.goForward(); return;
+            case findId:             workspace.focusSearch(); return;
+            case zoomInId:           workspace.setContentScale (workspace.getContentScale() + 0.1); return;
+            case zoomOutId:          workspace.setContentScale (workspace.getContentScale() - 0.1); return;
+            case zoomResetId:        workspace.setContentScale (1.0); return;
             case reloadId:           reload(); break;
             case exportPdfId:        exportView (Export::Format::pdf, currentView()); break;
             case exportPngId:        exportView (Export::Format::png, currentView()); break;
@@ -268,10 +301,20 @@ juce::PopupMenu MainWindow::fileMenu()
 
 juce::PopupMenu MainWindow::viewMenu()
 {
+    auto& workspace = content->getWorkspace();
     juce::PopupMenu menu;
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < viewCount; ++i)
         menu.addItem (item (viewFirstId + i, ViewSwitcher::viewName (views[i]), juce::String (i + 1),
                             currentView() == views[i]));
+    menu.addSeparator();
+    menu.addItem (item (backId, tr ("menu.back"), "[", false, workspace.canGoBack()));
+    menu.addItem (item (forwardId, tr ("menu.forward"), "]", false, workspace.canGoForward()));
+    menu.addItem (item (findId, tr ("menu.find"), "F"));
+    menu.addSeparator();
+    const auto scale = workspace.getContentScale();
+    menu.addItem (item (zoomInId, tr ("menu.zoomIn"), "+", false, scale < 2.0 - 1e-6));
+    menu.addItem (item (zoomOutId, tr ("menu.zoomOut"), "-", false, scale > 0.6 + 1e-6));
+    menu.addItem (item (zoomResetId, tr ("menu.actualSize"), "0", false, std::abs (scale - 1.0) > 1e-6));
     return menu;
 }
 
@@ -301,7 +344,7 @@ juce::PopupMenu MainWindow::optionsMenu()
     menu.addSubMenu (tr ("menu.language"), languages);
     menu.addSubMenu (tr ("menu.appearance"), appearance);
     menu.addSeparator();
-    menu.addItem (item (devicesId, tr ("menu.devices")));
+    menu.addItem (item (devicesId, tr ("menu.devices"), ","));
     return menu;
 }
 

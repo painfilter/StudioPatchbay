@@ -44,6 +44,9 @@ public:
     // --- Parsed data ---
 
     const ParsedDevices& getParsedDevices() const { return parsedDevices; }
+    // False until an External Plugins file has been read for the installation.
+    bool hasParsedDevices() const { return hasDevices; }
+    juce::Time getLastReadTime() const { return lastReadTime; }
     const std::vector<DetectedPort>& getDetectedPorts() const { return detectedPorts; }
     const std::vector<ControlRoomBus>& getControlRoomBuses() const { return controlRoomBuses; }
 
@@ -84,6 +87,8 @@ private:
     int preferredVersion = 0;
 
     ParsedDevices parsedDevices;
+    bool hasDevices = false;
+    juce::Time lastReadTime;
     std::vector<DetectedPort> detectedPorts;
     std::vector<ControlRoomBus> controlRoomBuses;
     std::vector<AudioPort> audioPorts;

@@ -1,73 +1,55 @@
 #pragma once
 
-#include <juce_gui_basics/juce_gui_basics.h>
-#include "Design/PlatinumLookAndFeel.h"
-#include "Model/DataModel.h"
-#include "StudioPatchbayTokens.h"
+#include "ViewData.h"
+#include "Model/SignalFlow.h"
 
 namespace StudioPatchbay
 {
 
-// Slide-in inspector panel on the right side showing detailed information
-// about a selected ParsedDevice. Appears when a device card is clicked,
-// dismissed via close button or clicking elsewhere.
-//
-// Shows: device name, type, all channel assignments with port context,
-// MIDI device, channel count, and mismatch warnings.
+// The detail panel of the Swift app, over the right edge of the views: the
+// selected device's type, name and ports, its signal flow (nodes on a channel
+// jump to it in the patchbay) and a table of details.
 class DeviceDetailPanel : public juce::Component
 {
 public:
-    DeviceDetailPanel();
+    static constexpr int panelWidth = 280;
 
-    void paint (juce::Graphics& g) override;
-    void resized() override;
+    explicit DeviceDetailPanel (const ViewData&);
 
-    // Show the panel for a device. Pass nullptr to hide.
-    void showDevice (const ParsedDevice* device,
-                     const std::vector<DetectedPort>& ports);
-    void hide();
+    void setStyle (const ViewStyle&);
+    void refresh();   // after the selection or data changed
 
-    bool isShowing() const { return visible; }
-
-    void setPalette (const StudioPatchbay::Design::Palette& newPalette);
-    void setUiScale (double scale);
-
-    // Callback when the panel is closed.
     std::function<void()> onClose;
 
-    // Logical width of the panel (used by parent for layout).
-    static constexpr int panelWidth = 240;
+    void paint (juce::Graphics&) override;
+    void resized() override;
 
 private:
-    int sc (int value) const;
+    class Page : public juce::Component, public juce::SettableTooltipClient
+    {
+    public:
+        explicit Page (DeviceDetailPanel& o) : owner (o) {}
+        void paint (juce::Graphics& g) override { owner.layout (&g); }
+        void mouseMove (const juce::MouseEvent&) override;
+        void mouseExit (const juce::MouseEvent&) override;
+        void mouseUp (const juce::MouseEvent&) override;
+        int hovered = -1;
+    private:
+        DeviceDetailPanel& owner;
+    };
 
-    // Paint a labelled section header.
-    void paintSectionHeader (juce::Graphics& g, juce::Rectangle<int>& area,
-                             const juce::String& title);
+    int layout (juce::Graphics*);
+    int nodeAt (juce::Point<int>) const;
+    int sc (int v) const { return juce::roundToInt (v * style.uiScale); }
+    float scf (float v) const { return static_cast<float> (v * style.uiScale); }
 
-    // Paint a key-value row.
-    void paintKeyValue (juce::Graphics& g, juce::Rectangle<int>& area,
-                        const juce::String& key, const juce::String& value,
-                        juce::Colour valueColour = juce::Colour());
-
-    // Paint channel list with port family context.
-    void paintChannelList (juce::Graphics& g, juce::Rectangle<int>& area,
-                           const std::vector<int>& channels,
-                           ChannelDirection dir);
-
-    // Find the port family for a given channel and direction.
-    juce::String portFamilyForChannel (int channel, ChannelDirection dir) const;
-
-    StudioPatchbay::Design::Palette pal = StudioPatchbay::Design::darkPalette();
-    double uiScale = 1.0;
-    bool visible = false;
-
-    ParsedDevice currentDevice;
-    std::vector<DetectedPort> currentPorts;
-
-    juce::TextButton closeButton { juce::String (juce::CharPointer_UTF8 ("\xc3\x97")) }; // × symbol
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DeviceDetailPanel)
+    const ViewData& data;
+    ViewStyle style;
+    std::vector<SignalFlow::Node> nodes;
+    std::vector<juce::Rectangle<int>> nodeBounds;
+    Page page { *this };
+    juce::Viewport viewport;
+    juce::TextButton closeButton;
 };
 
 } // namespace StudioPatchbay

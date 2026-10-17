@@ -17,8 +17,7 @@ public:
     {
         cards,
         patchbay,
-        controlRoom,
-        signalFlow
+        controlRoom
     };
 
     ViewSwitcher();
@@ -32,6 +31,7 @@ public:
     void setUiScale (double scale);
 
     View getActiveView() const { return activeView; }
+    int preferredWidth() const { return sc (4) + static_cast<int> (tabs.size()) * (sc (110) + sc (2)); }
     void setActiveView (View view);
 
     // Callback when the user clicks a tab.

@@ -17,8 +17,10 @@ juce::File PlatformPaths::getCubasePreferencesBase()
     return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
                .getChildFile ("Steinberg");
 #else
-    // Cubase does not run here; nothing to find.
-    return {};
+    // Cubase does not run here. For trying the app with copied preference
+    // folders, STUDIOPATCHBAY_CUBASE_PREFS may name a folder holding them.
+    const auto custom = juce::SystemStats::getEnvironmentVariable ("STUDIOPATCHBAY_CUBASE_PREFS", {});
+    return custom.isNotEmpty() ? juce::File (custom) : juce::File();
 #endif
 }
 

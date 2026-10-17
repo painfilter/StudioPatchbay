@@ -331,7 +331,7 @@ void AppContentComponent::setDarkMode (bool dark)
     contentLaf.setDarkMode (dark);
     menuBar.setPalette (pal);
     appWindow.setPalette (pal);
-    workspace.setPalette (pal);
+    workspace.setPalette (pal, dark);
     desktop.setDarkMode (dark);
     about.setDarkMode (dark);
     message.setDarkMode (dark);

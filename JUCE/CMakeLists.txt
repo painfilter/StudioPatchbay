@@ -71,6 +71,9 @@ set(SP_CORE_SOURCES
     Source/Model/PhysicalDevice.cpp
     Source/Model/AudioPorts.cpp
     Source/Model/DeviceStore.cpp
+    Source/Model/Browsing.cpp
+    Source/Model/PatchbayLayout.cpp
+    Source/Model/SignalFlow.cpp
 )
 
 set(SP_SOURCES
@@ -87,13 +90,13 @@ set(SP_SOURCES
     Source/AppState.cpp
     Source/UI/Fonts.cpp
     Source/UI/OS9MenuBar.cpp
-    Source/UI/SidebarPanel.cpp
     Source/UI/ViewSwitcher.cpp
-    Source/UI/DeviceCardView.cpp
+    Source/UI/Sidebar.cpp
+    Source/UI/Toolbar.cpp
+    Source/UI/ViewStyle.cpp
+    Source/UI/PatchbayView.cpp
     Source/UI/CardsView.cpp
-    Source/UI/PatchbayGridView.cpp
     Source/UI/ControlRoomView.cpp
-    Source/UI/SignalFlowView.cpp
     Source/UI/DeviceDetailPanel.cpp
     Source/Export/ViewExporter.cpp
     Source/UI/DesktopIcons.cpp
@@ -141,6 +144,7 @@ target_sources(StudioPatchbayTests PRIVATE
     Tests/AppSettingsTests.cpp
     Tests/LocalisationTests.cpp
     Tests/PhysicalDeviceTests.cpp
+    Tests/ViewModelTests.cpp
     ${SP_CORE_SOURCES}
 )
 target_include_directories(StudioPatchbayTests PRIVATE Source)
@@ -179,5 +183,6 @@ set_source_files_properties(
     Tests/AppSettingsTests.cpp
     Tests/LocalisationTests.cpp
     Tests/PhysicalDeviceTests.cpp
+    Tests/ViewModelTests.cpp
     PROPERTIES COMPILE_OPTIONS "${SP_WARNING_FLAGS}"
 )

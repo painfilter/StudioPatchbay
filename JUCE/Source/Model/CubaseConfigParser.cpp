@@ -108,15 +108,25 @@ std::vector<int> CubaseConfigParser::parseChannelsFromBusList (const juce::XmlEl
 ParsedDevices CubaseConfigParser::parseExternalPlugins (const juce::File& xmlFile)
 {
     ParsedDevices result;
+    parseExternalPlugins (xmlFile, result);
+    return result;
+}
 
-    auto xml = juce::XmlDocument::parse (xmlFile);
-    if (xml == nullptr || ! xml->hasTagName ("ExternalPlugins"))
-        return result;
+juce::Result CubaseConfigParser::parseExternalPlugins (const juce::File& xmlFile, ParsedDevices& out)
+{
+    out = {};
+    juce::XmlDocument document (xmlFile);
+    auto xml = document.getDocumentElement();
+    if (xml == nullptr)
+        return juce::Result::fail ("Invalid XML: " + document.getLastParseError());
+    if (! xml->hasTagName ("ExternalPlugins"))
+        return juce::Result::fail ("Missing <ExternalPlugins> root element");
+    auto& result = out;
 
     // Find <list name="External Effects">
     auto* effectsList = findNamedChild (xml.get(), "list", "External Effects");
     if (effectsList == nullptr)
-        return result;
+        return juce::Result::ok();
 
     for (auto* item = effectsList->getFirstChildElement(); item != nullptr;
          item = item->getNextElement())
@@ -172,7 +182,7 @@ ParsedDevices CubaseConfigParser::parseExternalPlugins (const juce::File& xmlFil
             result.fxDevices.push_back (std::move (device));
     }
 
-    return result;
+    return juce::Result::ok();
 }
 
 // ============================================================================

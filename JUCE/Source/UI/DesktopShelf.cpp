@@ -281,7 +281,7 @@ void DesktopShelf::showMenu (const Item& item)
         {
             const auto format = item.kind == Kind::exportPdf ? Export::Format::pdf : Export::Format::png;
             for (auto view : { ViewSwitcher::View::cards, ViewSwitcher::View::patchbay,
-                               ViewSwitcher::View::controlRoom, ViewSwitcher::View::signalFlow })
+                               ViewSwitcher::View::controlRoom })
                 menu.addItem (tr ("desktop.exportView").replace ("%VIEW%", ViewSwitcher::viewName (view)),
                               [this, format, view] { if (actions) actions->exportView (format, view); });
             break;

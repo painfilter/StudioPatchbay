@@ -12,6 +12,9 @@ struct CubaseConfigParser
 {
     // Parse External Plugins.xml -> instruments + FX devices with channel mappings.
     static ParsedDevices parseExternalPlugins (const juce::File& xmlFile);
+    // The same, telling a file that is not External Plugins XML apart from one
+    // that simply lists no devices.
+    static juce::Result parseExternalPlugins (const juce::File& xmlFile, ParsedDevices& out);
 
     // Parse Port Setup.xml -> detected port ranges (MADI, ADAT, AES, etc.).
     // Tries the rich ASIO format first, falls back to flat CoreAudio format.

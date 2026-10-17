@@ -71,6 +71,8 @@ struct ParsedDevice
         return channelCount() == 1 || (recvChannels.size() == 1 && sendChannels.size() <= 1);
     }
 
+    bool operator== (const ParsedDevice&) const = default;
+
     bool hasMismatchedChannels() const
     {
         return ! sendChannels.empty() && ! recvChannels.empty()

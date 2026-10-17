@@ -88,11 +88,17 @@ void AppState::selectInstallation (int index)
 void AppState::show (int index)
 {
     if (index != selectedIndex)
-        audioPorts.clear();   // another installation's ports do not apply
+    {
+        // Another installation's data does not apply.
+        audioPorts.clear();
+        parsedDevices = {};
+        hasDevices = false;
+    }
     if (index < 0 || index >= static_cast<int> (installations.size()))
     {
         selectedIndex = -1;
         parsedDevices = {};
+        hasDevices = false;
         detectedPorts.clear();
         controlRoomBuses.clear();
         errorMessage.clear();
@@ -126,15 +132,27 @@ void AppState::parseSelectedInstallation()
 
     errorMessage.clear();
 
-    // Parse External Plugins.
+    // Parse External Plugins. As in the Swift app: a missing file is an
+    // error with its path; a file that cannot be read keeps what was shown.
     auto epFile = inst->externalPluginsXml();
-    if (epFile.existsAsFile())
+    if (! epFile.existsAsFile())
     {
-        parsedDevices = CubaseConfigParser::parseExternalPlugins (epFile);
+        errorMessage = "External Plugins.xml not found in " + inst->prefsDir.getFullPathName();
+        parsedDevices = {};
+        hasDevices = false;
     }
     else
     {
-        parsedDevices = {};
+        ParsedDevices parsed;
+        const auto result = CubaseConfigParser::parseExternalPlugins (epFile, parsed);
+        if (result.failed())
+            errorMessage = "Failed to parse XML: " + result.getErrorMessage();
+        else
+        {
+            parsedDevices = std::move (parsed);
+            hasDevices = true;
+            lastReadTime = juce::Time::getCurrentTime();
+        }
     }
 
     // Parse Port Setup.

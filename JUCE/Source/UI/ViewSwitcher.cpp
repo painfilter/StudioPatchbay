@@ -10,8 +10,7 @@ ViewSwitcher::ViewSwitcher()
     tabs = {
         { "Cards",        View::cards },
         { "Patchbay",     View::patchbay },
-        { "Control Room", View::controlRoom },
-        { "Signal Flow",  View::signalFlow }
+        { "Control Room", View::controlRoom }
     };
 }
 
@@ -142,10 +141,9 @@ juce::String ViewSwitcher::viewName (View view)
     {
         case View::cards:       return Text::tr ("view.cards");
         case View::patchbay:    return Text::tr ("view.patchbay");
-        case View::controlRoom: return Text::tr ("view.controlRoom");
-        case View::signalFlow:  return Text::tr ("view.signalFlow");
+        case View::controlRoom: break;
     }
-    return {};
+    return Text::tr ("view.controlRoom");
 }
 
 } // namespace StudioPatchbay

@@ -55,6 +55,7 @@ AppSettings AppSettings::load (const juce::File& path)
     }
 
     settings.uiScale = file->getDoubleValue ("uiScale", settings.uiScale);
+    settings.contentScale = juce::jlimit (0.6, 2.0, file->getDoubleValue ("contentScale", settings.contentScale));
     settings.recentExports.addLines (file->getValue ("recentExports"));
     settings.recentExports.removeEmptyStrings();
     return settings;
@@ -79,6 +80,7 @@ void AppSettings::save (const juce::File& path) const
     file->setValue ("appearance", appearance);
     file->setValue ("language", language);
     file->setValue ("uiScale", uiScale);
+    file->setValue ("contentScale", contentScale);
     file->setValue ("windowWidth", windowWidth);
     file->setValue ("windowHeight", windowHeight);
     file->setValue ("lastCubaseVersion", lastCubaseVersion);

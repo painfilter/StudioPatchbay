@@ -19,6 +19,7 @@ struct AppSettings
     juce::String appearance { "system" };   // system | light | dark
     juce::String language { "system" };     // system | en | de
     double uiScale = 1.0;
+    double contentScale = 1.0;              // the views' own zoom, 0.6 .. 2.0
     int windowWidth = 0;                    // logical pixels; 0 = default size
     int windowHeight = 0;
     int lastCubaseVersion = 0;              // 0 = none chosen yet

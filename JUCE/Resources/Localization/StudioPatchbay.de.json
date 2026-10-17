@@ -8,13 +8,18 @@
     "quit": "StudioPatchbay beenden",
     "about": "Über StudioPatchbay …",
     "licenses": "Drittanbieter-Lizenzen …",
-    "devices": "Converter & Interfaces …"
+    "devices": "Converter & Interfaces …",
+    "actualSize": "Originalgröße",
+    "back": "Zurück",
+    "forward": "Vorwärts",
+    "find": "Suchen",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern"
   },
   "view": {
     "cards": "Karten",
     "patchbay": "Patchbay",
-    "controlRoom": "Control Room",
-    "signalFlow": "Signalfluss"
+    "controlRoom": "Control Room"
   },
   "ui": {
     "hidden": "Ausgeblendet",
@@ -138,5 +143,126 @@
     "typeConverter": "Converter",
     "typeAudioInterface": "Audio-Interface",
     "typeOther": "Sonstige"
+  },
+  "cards": {
+    "mismatch": "Sende- und Rückkanäle unterscheiden sich",
+    "mono": "Mono",
+    "stereo": "Stereo",
+    "noChannels": "Keine Kanäle zugewiesen",
+    "noMatches": "Keine Treffer",
+    "noMatchesHelp": "Suche oder Filter anpassen.",
+    "sectionInstruments": "Instrumente",
+    "sectionFx": "Externe Effekte",
+    "sectionSends": "FX-Sends (Synth-Routing)",
+    "source": "Aus den externen Instrumenten und Effekten von Cubase (Studio > Audioverbindungen)",
+    "typeInstrument": "Instrument",
+    "typeFx": "Externer Effekt",
+    "typeSendOnly": "Nur FX-Send"
+  },
+  "controlRoom": {
+    "cubase": "Cubase Control Room",
+    "direct": "direkter Hardware-Ausgang (kein Converter)",
+    "emptyTitle": "Kein Control-Room-Setup gefunden",
+    "emptyHelp": "Monitorbusse im Control Room von Cubase einrichten (Studio > Audioverbindungen > Studio), dann neu laden.",
+    "kindPhones": "Kopfhörer",
+    "kindSpeaker": "Lautsprecher",
+    "kindStudio": "Studio"
+  },
+  "detail": {
+    "adatChannels": "ADAT-Kanäle",
+    "madiChannels": "MADI-Kanäle",
+    "channelList": "Kanäle",
+    "channels": "%COUNT% Kanäle",
+    "details": "Details",
+    "format": "Format",
+    "jumpTooltip": "Diesen Kanal in der Patchbay zeigen",
+    "midi": "MIDI-Gerät",
+    "mismatch": "Sende- und Rückkanäle unterscheiden sich",
+    "noConverter": "kein Converter/Interface eingerichtet",
+    "physicalIO": "Physische I/O",
+    "port": "Port",
+    "signalFlow": "Signalfluss",
+    "type": "Typ",
+    "unknown": "Unbekannt"
+  },
+  "empty": {
+    "couldNotLoad": "XML konnte nicht geladen werden",
+    "noData": "Keine Cubase-Daten gefunden",
+    "noInstallations": "Keine Cubase-Installation gefunden. Cubase muss mindestens einmal gestartet worden sein.",
+    "xmlMissing": "%NAMES% gefunden, aber External Plugins.xml fehlt. Cubase öffnen, mindestens ein externes Gerät einrichten und beenden: Cubase schreibt die Datei beim Beenden."
+  },
+  "filter": {
+    "all": "Alle",
+    "instruments": "Instrumente",
+    "fx": "Externe Effekte",
+    "sendOnly": "Nur Send",
+    "stereo": "Stereo",
+    "mono": "Mono",
+    "midi": "Mit MIDI"
+  },
+  "flow": {
+    "analogIn": "%NAME%  →  Analog-Eingang",
+    "analogOut": "Analog-Ausgang → %NAME%",
+    "cubaseFxReturn": "Cubase-FX-Rückweg",
+    "cubaseFxSend": "Cubase-FX-Send",
+    "cubaseReceived": "Cubase (empfangen)",
+    "cubaseSent": "Cubase (gesendet)",
+    "instrumentTrack": "Cubase-Instrumentenspur",
+    "midiOut": "MIDI-Ausgang → %NAME%",
+    "noChannels": "In Cubase keine Kanäle zugewiesen",
+    "noSendChannels": "Keine Sendekanäle zugewiesen"
+  },
+  "patchbay": {
+    "audioInterfaces": "Audio-Interfaces",
+    "audioInterfacesDetail": "Eigenständige Geräte, getrennt von den Ports des Interfaces",
+    "channelsInUse": "%COUNT% Kanäle belegt",
+    "clickToCycle": "(Klick schaltet weiter)",
+    "columnDevice": "Gerät",
+    "columnType": "Typ",
+    "connected": "Angeschlossen",
+    "controlRoomDetail": "Ausgänge der Monitorbusse, hinter den Interfaces und Convertern oben",
+    "cubaseChannel": "Cubase-Kanal",
+    "directOutput": "direkter Hardware-Ausgang (kein Converter/Interface)",
+    "hardware": "Hardware",
+    "legendControlRoom": "Control Room",
+    "legendFx": "FX",
+    "legendInstrument": "Instrument",
+    "legendSendOnly": "Nur Send",
+    "legendHint": "Jeder Block = ein Converter oder Interface  ·  OUT oben, IN darunter  ·  Zeigen für Details  ·  Klicken zum Ansehen",
+    "noDevicesBanner": "Noch keine Converter oder Interfaces eingerichtet. Die Kanäle erscheinen ohne Gerätegruppen, bis welche angelegt sind.",
+    "openSetup": "Einrichten …",
+    "physicalIO": "Physische I/O",
+    "unknown": "Unbekannt",
+    "via": "über"
+  },
+  "sidebar": {
+    "noInstallations": "Keine Installationen gefunden",
+    "setup": "Converter & Interfaces einrichten …",
+    "xmlFound": "External Plugins.xml vorhanden",
+    "xmlMissing": "Noch keine XML, erst Cubase starten",
+    "cubaseVersion": "Cubase-Version",
+    "filter": "Filter",
+    "view": "Ansicht"
+  },
+  "toolbar": {
+    "back": "Zurück",
+    "forward": "Vorwärts",
+    "channels": "Kanäle",
+    "fxDevices": "FX-Geräte",
+    "instruments": "Instrumente",
+    "clearSearch": "Suche löschen",
+    "nextMatch": "Zum nächsten Treffer in der Patchbay",
+    "search": "Suchen …",
+    "watching": "Beobachtet",
+    "notWatching": "Nicht beobachtet",
+    "reload": "Neu laden",
+    "reloadTooltip": "Cubase-Einstellungen neu durchsuchen und XML neu laden",
+    "reset": "Zurücksetzen",
+    "updatedAt": "Aktualisiert %TIME%",
+    "updatedHours": "Vor %COUNT% Std. aktualisiert",
+    "updatedJustNow": "Gerade aktualisiert",
+    "updatedMinutes": "Vor %COUNT% Min. aktualisiert",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern"
   }
 }
