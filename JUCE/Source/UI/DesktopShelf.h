@@ -6,6 +6,8 @@
 #include "AppState.h"
 #include "ViewSwitcher.h"
 
+#include <optional>
+
 namespace StudioPatchbay
 {
 
@@ -17,7 +19,9 @@ public:
     virtual ~DesktopActions() = default;
 
     virtual ViewSwitcher::View currentView() const = 0;
-    virtual void exportView (Export::Format, ViewSwitcher::View) = 0;
+    // Without a view: the patchbay sheet of the Swift app (full patchbay,
+    // 1400 px wide, what is connected listed under each block).
+    virtual void exportView (Export::Format, std::optional<ViewSwitcher::View> = std::nullopt) = 0;
     virtual void reload() = 0;
     virtual void showAbout() = 0;
     virtual void forgetRecentExport (const juce::File&) = 0;

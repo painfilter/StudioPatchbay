@@ -1,6 +1,6 @@
 # StudioPatchbay OS9 Rework - Project Status
 
-## Current Status: IMPLEMENTATION (feature-complete for a first JUCE release, pending CI and manual tests on macOS and Windows)
+## Current Status: IMPLEMENTATION (functionally on par with the Swift app; manual tests on macOS and Windows pending)
 
 The JUCE/C++ rewrite of StudioPatchbay with a classic Mac OS 9 "Platinum"
 interface lives in `JUCE/`. It builds on macOS, Windows and Linux (Linux only
@@ -65,6 +65,11 @@ for tests; Cubase does not run there).
   zoom (Cmd+ +/-/0) and Converters & Interfaces (Cmd+,). The separate
   Signal Flow tab of the earlier JUCE draft is gone: the flow is in the detail
   panel, as in Swift.
+- **Export (stage 4):** File > Export Patchbay as PDF/PNG and the desktop export
+  programs write the patchbay as the Swift app does (everything, no search or
+  selection, 1400 px wide at the current content zoom, a "Connected" table under
+  each block, 2x raster); the current view can still be exported on its own.
+  `StudioPatchbay --export <file.pdf|png>` does the same from a script.
 - **Texts:** `JUCE/Resources/Localization/StudioPatchbay.<lang>.json` (product)
   and `common.<lang>.json` (generated, do not edit).
 - **Look and feel:** `JUCE/Source/Design/` is generated; do not edit by hand.
@@ -85,9 +90,8 @@ one-way devices, audio interfaces left out, overlapping ports), signal flow.
 
 ### Remaining Work / Next Tasks
 1. Manual test on a real Cubase setup on macOS and on Windows (detection,
-   live reload, export, dark/light, every zoom level).
-2. Stage 4:
-   export as in the Swift app (patchbay with "Connected" table).
-3. Release packaging: macOS signing + notarisation (`packaging/release.sh` is
+   live reload, the shared physicalDevices.json, views, export, language,
+   appearance, window zoom and resizing, WindowShade).
+2. Release packaging: macOS signing + notarisation (`packaging/release.sh` is
    for the Swift app), Windows code signing / installer.
-4. Replace the Swift app on `main` once the above is done (with approval).
+3. Replace the Swift app on `main` once the above is done (with approval).

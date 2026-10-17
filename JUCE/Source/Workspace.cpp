@@ -294,4 +294,38 @@ Export::ExportSource Workspace::exportSource (ViewSwitcher::View v)
     return { view (v).getExportContent(), style.pal.windowPanel, style.uiScale, title };
 }
 
+Workspace::PatchbaySheet::PatchbaySheet (const ViewData& live, const ViewStyle& liveStyle, const juce::String& t)
+    : data (live), title (t), background (liveStyle.pal.windowPanel)
+{
+    data.filtered = data.devices.all();
+    data.highlightedChannels.clear();
+    for (const auto& d : data.filtered)
+        for (auto ch : d.allChannels())
+            data.highlightedChannels.insert (ch);
+    data.searchActive = false;
+    data.selected.reset();
+    data.select = nullptr;
+    data.jumpToChannel = nullptr;
+    data.openSetup = nullptr;
+
+    auto style = liveStyle;
+    style.uiScale = 1.0;
+    view.setShowConnections (true);
+    view.setBounds (0, 0, 1400 + view.getViewport().getScrollBarThickness(), 800);
+    view.setStyle (style);
+}
+
+Export::ExportSource Workspace::PatchbaySheet::source()
+{
+    return { view.getExportContent(), background, 1.0, title };
+}
+
+std::unique_ptr<Workspace::PatchbaySheet> Workspace::makePatchbaySheet() const
+{
+    juce::String title ("StudioPatchbay - " + ViewSwitcher::viewName (ViewSwitcher::View::patchbay));
+    if (auto* inst = appState.getSelectedInstallation())
+        title << " - " << inst->displayName();
+    return std::make_unique<PatchbaySheet> (data, style, title);
+}
+
 } // namespace StudioPatchbay

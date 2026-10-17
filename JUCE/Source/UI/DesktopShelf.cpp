@@ -253,8 +253,8 @@ void DesktopShelf::activate (const Item& item)
             break;
         }
         case Kind::devices:   if (actions) actions->showDeviceManager(); break;
-        case Kind::exportPdf: if (actions) actions->exportView (Export::Format::pdf, actions->currentView()); break;
-        case Kind::exportPng: if (actions) actions->exportView (Export::Format::png, actions->currentView()); break;
+        case Kind::exportPdf: if (actions) actions->exportView (Export::Format::pdf); break;
+        case Kind::exportPng: if (actions) actions->exportView (Export::Format::png); break;
         case Kind::watcher:   if (actions) actions->reload(); break;
         case Kind::recent:    item.file.startAsProcess(); break;
     }
@@ -280,6 +280,8 @@ void DesktopShelf::showMenu (const Item& item)
         case Kind::exportPng:
         {
             const auto format = item.kind == Kind::exportPdf ? Export::Format::pdf : Export::Format::png;
+            menu.addItem (tr ("menu.exportPatchbay"), [this, format] { if (actions) actions->exportView (format); });
+            menu.addSeparator();
             for (auto view : { ViewSwitcher::View::cards, ViewSwitcher::View::patchbay,
                                ViewSwitcher::View::controlRoom })
                 menu.addItem (tr ("desktop.exportView").replace ("%VIEW%", ViewSwitcher::viewName (view)),

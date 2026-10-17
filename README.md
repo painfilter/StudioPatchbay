@@ -93,11 +93,24 @@ ctest --test-dir build -C Release --output-on-failure
 
 Cubase's preferences are read from `~/Library/Preferences/Cubase NN/` on macOS
 and `%APPDATA%\Steinberg\Cubase NN_64\` on Windows (version 12 or later).
-**File > Export as PDF/PNG** saves the current view in full, including the
-parts scrolled out of sight. The same exports sit on the desktop as icons;
-drag a view tab onto one to export that view. The desktop also shows each
-Cubase installation, the file watcher, your last exports, and the trash, which
-opens About.
+It shares its converter/interface setup with the Swift app
+(`physicalDevices.json` and `portLabels.json` in the same folder), and offers
+the same views: Cards, Patchbay and Control Room, with filter, search, the
+detail panel's signal flow and the Converters & Interfaces window. The
+interface is in English or German (Options > Language).
+
+**File > Export Patchbay as PDF/PNG** writes the patchbay as the Swift app
+does: everything, 1400 pixels wide, with what is connected listed under each
+block. The current view can be exported too. From a script:
+
+```bash
+StudioPatchbay --export patchbay.pdf
+```
+
+Collapse the window (the box at the right of its title bar) to reach the
+desktop: each Cubase installation, Converters & Interfaces, the export
+programs, the file watcher, your last exports, and the trash, which opens
+About.
 
 ## Why no sandbox?
 

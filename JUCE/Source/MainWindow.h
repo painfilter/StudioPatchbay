@@ -31,6 +31,9 @@ public:
 
     AppContentComponent& getContent() { return *content; }
 
+    // Writes the patchbay sheet (PDF or PNG by extension) without asking.
+    juce::Result exportPatchbayTo (const juce::File&);
+
 private:
     void showMenu (OS9MenuBar::Menu);
     juce::PopupMenu fileMenu();
@@ -40,7 +43,7 @@ private:
 
     // DesktopActions; the menus use the same commands.
     ViewSwitcher::View currentView() const override;
-    void exportView (Export::Format, ViewSwitcher::View) override;
+    void exportView (Export::Format, std::optional<ViewSwitcher::View>) override;
     void reload() override;
     void showAbout() override;
     void forgetRecentExport (const juce::File&) override;

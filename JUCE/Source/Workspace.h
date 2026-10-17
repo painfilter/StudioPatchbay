@@ -53,6 +53,22 @@ public:
     // A view's complete content, for export.
     Export::ExportSource exportSource (ViewSwitcher::View);
 
+    // The patchbay as the Swift app exports it: everything (no search, no
+    // selection), 1400 px wide at 100 % window zoom with the current content
+    // zoom, and under each block the devices and buses connected to it.
+    class PatchbaySheet
+    {
+    public:
+        PatchbaySheet (const ViewData&, const ViewStyle&, const juce::String& title);
+        Export::ExportSource source();
+    private:
+        ViewData data;
+        PatchbayView view { data };
+        juce::String title;
+        juce::Colour background;
+    };
+    std::unique_ptr<PatchbaySheet> makePatchbaySheet() const;
+
 private:
     void changeListenerCallback (juce::ChangeBroadcaster*) override;
     void updateData();

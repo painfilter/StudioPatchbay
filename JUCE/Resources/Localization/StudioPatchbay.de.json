@@ -3,8 +3,8 @@
     "file": "Ablage",
     "view": "Ansicht",
     "reload": "Konfiguration neu laden",
-    "exportPdf": "Als PDF exportieren …",
-    "exportPng": "Als PNG exportieren …",
+    "exportPdf": "Patchbay als PDF exportieren …",
+    "exportPng": "Patchbay als Bild (PNG) exportieren …",
     "quit": "StudioPatchbay beenden",
     "about": "Über StudioPatchbay …",
     "licenses": "Drittanbieter-Lizenzen …",
@@ -14,7 +14,10 @@
     "forward": "Vorwärts",
     "find": "Suchen",
     "zoomIn": "Vergrößern",
-    "zoomOut": "Verkleinern"
+    "zoomOut": "Verkleinern",
+    "exportViewPdf": "%VIEW% als PDF exportieren …",
+    "exportViewPng": "%VIEW% als PNG exportieren …",
+    "exportPatchbay": "Patchbay exportieren"
   },
   "view": {
     "cards": "Karten",
@@ -34,7 +37,7 @@
   "desktop": {
     "pdfExport": "PDF-Export",
     "pngExport": "PNG-Export",
-    "exportDetail": "Exportiert die aktuelle Ansicht",
+    "exportDetail": "Exportiert die Patchbay",
     "watcher": "Beobachter",
     "watcherRead": "Gelesen %TIME%",
     "watcherOff": "Aus",

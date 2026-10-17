@@ -3,8 +3,8 @@
     "file": "File",
     "view": "View",
     "reload": "Reload Configuration",
-    "exportPdf": "Export as PDF…",
-    "exportPng": "Export as PNG…",
+    "exportPdf": "Export Patchbay as PDF…",
+    "exportPng": "Export Patchbay as Image (PNG)…",
     "quit": "Quit StudioPatchbay",
     "about": "About StudioPatchbay…",
     "licenses": "Third-Party Licenses…",
@@ -14,7 +14,10 @@
     "forward": "Forward",
     "find": "Search",
     "zoomIn": "Zoom In",
-    "zoomOut": "Zoom Out"
+    "zoomOut": "Zoom Out",
+    "exportViewPdf": "Export %VIEW% as PDF…",
+    "exportViewPng": "Export %VIEW% as PNG…",
+    "exportPatchbay": "Export Patchbay"
   },
   "view": {
     "cards": "Cards",
@@ -34,7 +37,7 @@
   "desktop": {
     "pdfExport": "PDF Export",
     "pngExport": "PNG Export",
-    "exportDetail": "Exports the current view",
+    "exportDetail": "Exports the patchbay",
     "watcher": "Watcher",
     "watcherRead": "Read %TIME%",
     "watcherOff": "Off",

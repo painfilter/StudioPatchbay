@@ -32,7 +32,7 @@ constexpr int viewCount = 3;
 // Menu item ids.
 enum : int
 {
-    reloadId = 1, exportPdfId, exportPngId, quitId,
+    reloadId = 1, exportPdfId, exportPngId, quitId, exportViewPdfId, exportViewPngId,
     viewFirstId = 10,
     backId = 20, forwardId, zoomInId, zoomOutId, zoomResetId, findId,
     zoomFirstId = 100,
@@ -269,8 +269,10 @@ void MainWindow::showMenu (Menu which)
             case zoomOutId:          workspace.setContentScale (workspace.getContentScale() - 0.1); return;
             case zoomResetId:        workspace.setContentScale (1.0); return;
             case reloadId:           reload(); break;
-            case exportPdfId:        exportView (Export::Format::pdf, currentView()); break;
-            case exportPngId:        exportView (Export::Format::png, currentView()); break;
+            case exportPdfId:        exportView (Export::Format::pdf, std::nullopt); return;
+            case exportPngId:        exportView (Export::Format::png, std::nullopt); return;
+            case exportViewPdfId:    exportView (Export::Format::pdf, currentView()); return;
+            case exportViewPngId:    exportView (Export::Format::png, currentView()); return;
             case quitId:             juce::JUCEApplication::getInstance()->systemRequestedQuit(); return;
             case languageSystemId:   applyLanguage ("system"); break;
             case languageEnglishId:  applyLanguage ("en"); break;
@@ -292,8 +294,12 @@ juce::PopupMenu MainWindow::fileMenu()
     juce::PopupMenu menu;
     menu.addItem (item (reloadId, tr ("menu.reload"), "R"));
     menu.addSeparator();
-    menu.addItem (item (exportPdfId, tr ("menu.exportPdf")));
-    menu.addItem (item (exportPngId, tr ("menu.exportPng")));
+    const auto hasData = content->getAppState().hasParsedDevices();
+    menu.addItem (item (exportPdfId, tr ("menu.exportPdf"), {}, false, hasData));
+    menu.addItem (item (exportPngId, tr ("menu.exportPng"), {}, false, hasData));
+    const auto viewName = ViewSwitcher::viewName (currentView());
+    menu.addItem (item (exportViewPdfId, tr ("menu.exportViewPdf").replace ("%VIEW%", viewName), {}, false, hasData));
+    menu.addItem (item (exportViewPngId, tr ("menu.exportViewPng").replace ("%VIEW%", viewName), {}, false, hasData));
     menu.addSeparator();
     menu.addItem (item (quitId, tr ("menu.quit"), "Q"));
     return menu;
@@ -361,15 +367,19 @@ juce::PopupMenu MainWindow::helpMenu()
 // Actions
 // ============================================================================
 
-void MainWindow::exportView (Export::Format format, ViewSwitcher::View view)
+void MainWindow::exportView (Export::Format format, std::optional<ViewSwitcher::View> view)
 {
-    const auto extension = format == Export::Format::pdf ? juce::String (".pdf") : juce::String (".png");
-    const auto name = ViewSwitcher::viewName (view);
-    const auto suggested = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
-                               .getChildFile ("StudioPatchbay " + name + extension);
+    if (! content->getAppState().hasParsedDevices())
+        return;
 
-    exportChooser = std::make_unique<juce::FileChooser> (tr ("desktop.exportView").replace ("%VIEW%", name),
-                                                         suggested, "*" + extension);
+    const auto extension = format == Export::Format::pdf ? juce::String (".pdf") : juce::String (".png");
+    const auto fileName = view ? "StudioPatchbay " + ViewSwitcher::viewName (*view) : juce::String ("StudioPatchbay");
+    const auto suggested = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
+                               .getChildFile (fileName + extension);
+    const auto title = view ? tr ("desktop.exportView").replace ("%VIEW%", ViewSwitcher::viewName (*view))
+                            : tr ("menu.exportPatchbay");
+
+    exportChooser = std::make_unique<juce::FileChooser> (title, suggested, "*" + extension);
     const auto flags = juce::FileBrowserComponent::saveMode
                      | juce::FileBrowserComponent::canSelectFiles
                      | juce::FileBrowserComponent::warnAboutOverwriting;
@@ -382,7 +392,15 @@ void MainWindow::exportView (Export::Format format, ViewSwitcher::View view)
         if (! target.hasFileExtension (extension))
             target = target.withFileExtension (extension);
 
-        const auto result = Export::exportTo (content->getWorkspace().exportSource (view), format, target);
+        auto& workspace = content->getWorkspace();
+        juce::Result result = juce::Result::ok();
+        if (view)
+            result = Export::exportTo (workspace.exportSource (*view), format, target);
+        else
+        {
+            const auto sheet = workspace.makePatchbaySheet();
+            result = Export::exportTo (sheet->source(), format, target);
+        }
         if (result.failed())
         {
             content->showMessage (tr ("message.exportFailed"), result.getErrorMessage());
@@ -391,6 +409,15 @@ void MainWindow::exportView (Export::Format format, ViewSwitcher::View view)
         settings.rememberExport (target);
         saveSettings();
     });
+}
+
+juce::Result MainWindow::exportPatchbayTo (const juce::File& target)
+{
+    if (! content->getAppState().hasParsedDevices())
+        return juce::Result::fail ("No External Plugins.xml was read; there is nothing to export.");
+    const auto format = target.hasFileExtension (".png") ? Export::Format::png : Export::Format::pdf;
+    const auto sheet = content->getWorkspace().makePatchbaySheet();
+    return Export::exportTo (sheet->source(), format, target);
 }
 
 ViewSwitcher::View MainWindow::currentView() const
