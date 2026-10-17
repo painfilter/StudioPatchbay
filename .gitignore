@@ -38,3 +38,11 @@ dist/
 export/
 *.dmg
 *.zip
+
+# JUCE / CMake build output
+JUCE/build/
+JUCE/cmake-build-*/
+JUCE/CMakeFiles/
+JUCE/CMakeCache.txt
+JUCE/cmake_install.cmake
+JUCE/compile_commands.json
