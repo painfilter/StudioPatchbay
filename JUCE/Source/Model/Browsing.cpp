@@ -1,6 +1,7 @@
 #include "Browsing.h"
 
 #include <algorithm>
+#include <limits>
 
 namespace StudioPatchbay
 {

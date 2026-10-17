@@ -1,5 +1,7 @@
 #include "SignalFlow.h"
 
+#include <algorithm>
+
 namespace StudioPatchbay::SignalFlow
 {
 
