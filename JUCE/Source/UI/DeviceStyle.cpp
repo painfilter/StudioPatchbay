@@ -1,5 +1,6 @@
 #include "DeviceStyle.h"
 #include "Localisation/Text.h"
+#include "Fonts.h"
 
 namespace StudioPatchbay::DeviceStyle
 {
@@ -130,7 +131,7 @@ const std::vector<ConnectorType>& digitalConnectors()
 
 juce::Font monoFont (float height)
 {
-    return juce::Font (juce::FontOptions (juce::Font::getDefaultMonospacedFontName(), height, juce::Font::plain));
+    return Fonts::mono (height);
 }
 
 } // namespace StudioPatchbay::DeviceStyle

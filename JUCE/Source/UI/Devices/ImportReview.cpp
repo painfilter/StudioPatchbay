@@ -1,6 +1,7 @@
 #include "ImportReview.h"
 #include "UI/DeviceStyle.h"
 #include "Localisation/Text.h"
+#include "UI/Glyphs.h"
 
 namespace StudioPatchbay
 {
@@ -11,9 +12,9 @@ using Text::tr;
 
 constexpr int margin = 16, summaryHeight = 76, footerHeight = 48, lineHeight = 16;
 
-juce::String warn (const juce::String& s) { return juce::String (juce::CharPointer_UTF8 ("\xe2\x9a\xa0 ")) + s; }
-juce::String stop (const juce::String& s) { return juce::String (juce::CharPointer_UTF8 ("\xe2\x9c\x95 ")) + s; }
-juce::String ok (const juce::String& s)   { return juce::String (juce::CharPointer_UTF8 ("\xe2\x9c\x93 ")) + s; }
+const auto amber = juce::Colour (0xffd08a00);
+const auto red = juce::Colour (0xffc0392b);
+const auto green = juce::Colour (0xff2fa84f);
 } // namespace
 
 ImportReview::ImportReview (AppState& state, std::vector<PhysicalDevice> imported)
@@ -52,18 +53,22 @@ void ImportReview::paint (juce::Graphics& g)
     g.setColour (pal.ink);
 
     const auto count = juce::String (static_cast<int> (devices.size()));
-    juce::StringArray lines;
+    const auto summaryLine = [&] (Glyphs::Kind kind, juce::Colour colour, const juce::String& text)
+    {
+        g.setColour (pal.ink);
+        Glyphs::line (g, kind, colour, pal.ink, text, area.removeFromTop (24), 2);
+    };
     if (appState.getDetectedPorts().empty())
-        lines.add (tr ("devices.importNoPorts"));
+        g.drawFittedText (tr ("devices.importNoPorts"), area.removeFromTop (30), juce::Justification::topLeft, 2);
     else if (unmatched > 0)
-        lines.add (warn (tr ("devices.importMismatch").replace ("%COUNT%", juce::String (unmatched)).replace ("%TOTAL%", count)));
+        summaryLine (Glyphs::Kind::warning, amber,
+                     tr ("devices.importMismatch").replace ("%COUNT%", juce::String (unmatched)).replace ("%TOTAL%", count));
     else
-        lines.add (ok (tr ("devices.importAllMatch").replace ("%TOTAL%", count)));
+        summaryLine (Glyphs::Kind::check, green, tr ("devices.importAllMatch").replace ("%TOTAL%", count));
     if (addBlocked > 0)
-        lines.add (stop (tr ("devices.importAddBlocked").replace ("%COUNT%", juce::String (addBlocked))));
+        summaryLine (Glyphs::Kind::stop, red, tr ("devices.importAddBlocked").replace ("%COUNT%", juce::String (addBlocked)));
     if (replaceBlocked > 0)
-        lines.add (stop (tr ("devices.importReplaceBlocked").replace ("%COUNT%", juce::String (replaceBlocked))));
-    g.drawFittedText (lines.joinIntoString ("\n"), area, juce::Justification::topLeft, 5);
+        summaryLine (Glyphs::Kind::stop, red, tr ("devices.importReplaceBlocked").replace ("%COUNT%", juce::String (replaceBlocked)));
 
     g.setColour (pal.shadowEdge);
     g.fillRect (margin, summaryHeight + 10, width - 2 * margin, 1);
@@ -107,26 +112,26 @@ void ImportReview::Rows::paint (juce::Graphics& g)
         if (c.addConflicts.empty() && c.unmatchedDirections.empty())
         {
             g.setColour (pal.inkSoft);
-            g.drawText (ok (tr ("devices.importNoIssues")), 8, y, getWidth() - 8, lineHeight, juce::Justification::centredLeft);
+            Glyphs::line (g, Glyphs::Kind::check, green, pal.inkSoft, tr ("devices.importNoIssues"), { 8, y, getWidth() - 8, lineHeight });
             y += lineHeight;
         }
         for (const auto& conflict : c.addConflicts)
         {
             g.setColour (pal.ink);
-            g.drawText (stop (tr ("devices.conflictWith")
+            Glyphs::line (g, Glyphs::Kind::stop, red, pal.ink, tr ("devices.conflictWith")
                                   .replace ("%DIR%", conflict.direction == ChannelDirection::send ? "OUT" : "IN")
                                   .replace ("%RANGE%", DeviceStyle::rangeOf ({ conflict.first, conflict.last }))
-                                  .replace ("%NAME%", conflict.otherName)),
-                        8, y, getWidth() - 8, lineHeight, juce::Justification::centredLeft);
+                                  .replace ("%NAME%", conflict.otherName),
+                          { 8, y, getWidth() - 8, lineHeight });
             y += lineHeight;
         }
         for (auto direction : c.unmatchedDirections)
         {
             g.setColour (pal.inkSoft);
-            g.drawText (warn (tr ("devices.importNoPort")
+            Glyphs::line (g, Glyphs::Kind::warning, amber, pal.inkSoft, tr ("devices.importNoPort")
                                   .replace ("%DIR%", direction == ChannelDirection::send ? "OUT" : "IN")
-                                  .replace ("%RANGE%", DeviceStyle::rangeOf (d.range (direction)))),
-                        8, y, getWidth() - 8, lineHeight, juce::Justification::centredLeft);
+                                  .replace ("%RANGE%", DeviceStyle::rangeOf (d.range (direction))),
+                          { 8, y, getWidth() - 8, lineHeight });
             y += lineHeight;
         }
         y += 6;

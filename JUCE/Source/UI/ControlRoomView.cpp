@@ -84,7 +84,16 @@ int ControlRoomView::busCard (juce::Graphics* g, const ControlRoomBus& bus, juce
             g->drawRect (r, 1);
             g->setColour (s.pal.ink);
             g->setFont (s.font (11.0f));
-            g->drawText (icon, r.withWidth (s.px (24)), juce::Justification::centred);
+            if (icon.isNotEmpty())
+                g->drawText (icon, r.withWidth (s.px (24)), juce::Justification::centred);
+            else
+            {
+                // Cubase: a small screen, as in the detail panel's flow.
+                const auto screen = r.withWidth (s.px (24)).toFloat().withSizeKeepingCentre (static_cast<float> (s.px (12)),
+                                                                                            static_cast<float> (s.px (9)));
+                g->drawRect (screen, 1.0f);
+                g->fillRect (screen.getCentreX() - s.px (3), screen.getBottom() + 1.0f, static_cast<float> (s.px (6)), 1.0f);
+            }
             g->drawText (text, r.withTrimmedLeft (s.px (26)).withTrimmedRight (s.px (4)), juce::Justification::centredLeft, true);
         }
         y += r.getHeight();
@@ -101,7 +110,7 @@ int ControlRoomView::busCard (juce::Graphics* g, const ControlRoomBus& bus, juce
         y += s.px (13);
     };
 
-    node (juce::String (juce::CharPointer_UTF8 ("\xe2\x97\x8e")), tr ("controlRoom.cubase"), s.pal.ink);
+    node ({}, tr ("controlRoom.cubase"), s.pal.ink);
     for (const auto& route : routes (bus))
     {
         flowArrow();

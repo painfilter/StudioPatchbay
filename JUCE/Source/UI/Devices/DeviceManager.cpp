@@ -4,6 +4,7 @@
 #include "UI/DeviceStyle.h"
 #include "Design/PlatinumOverlayWindow.h"
 #include "Localisation/Text.h"
+#include "UI/Glyphs.h"
 
 #include <algorithm>
 
@@ -242,8 +243,8 @@ public:
         {
             g.setColour (pal.inkSoft);
             g.setFont (Fonts::sans (10.5f, Fonts::Weight::regular));
-            g.drawFittedText (juce::String (juce::CharPointer_UTF8 ("\xe2\x9a\xa0 ")) + tr ("devices.approximate"),
-                              approximateArea, juce::Justification::topLeft, 4);
+            Glyphs::line (g, Glyphs::Kind::warning, juce::Colour (0xffd08a00), pal.inkSoft, tr ("devices.approximate"),
+                          approximateArea, 4);
         }
     }
 

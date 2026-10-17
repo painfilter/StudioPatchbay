@@ -14,7 +14,7 @@ namespace
 // trip the leak detector and crash at exit).
 struct FontCache : public juce::DeletedAtShutdown
 {
-    juce::Typeface::Ptr regular, medium, semiBold, bold;
+    juce::Typeface::Ptr regular, medium, semiBold, bold, monoRegular, monoSemiBold;
 
     FontCache()
     {
@@ -26,6 +26,10 @@ struct FontCache : public juce::DeletedAtShutdown
                                                             BinaryData::IBMPlexSansSemiBold_ttfSize);
         bold     = juce::Typeface::createSystemTypefaceFor (BinaryData::IBMPlexSansBold_ttf,
                                                             BinaryData::IBMPlexSansBold_ttfSize);
+        monoRegular  = juce::Typeface::createSystemTypefaceFor (BinaryData::IBMPlexMonoRegular_ttf,
+                                                                BinaryData::IBMPlexMonoRegular_ttfSize);
+        monoSemiBold = juce::Typeface::createSystemTypefaceFor (BinaryData::IBMPlexMonoSemiBold_ttf,
+                                                                BinaryData::IBMPlexMonoSemiBold_ttfSize);
     }
 
     ~FontCache() override { clearSingletonInstance(); }
@@ -56,6 +60,13 @@ juce::Typeface::Ptr Fonts::typeface (Weight w)
 juce::Font Fonts::sans (float height, Weight w)
 {
     return juce::Font (juce::FontOptions (typeface (w)).withHeight (height));
+}
+
+juce::Font Fonts::mono (float height, Weight w)
+{
+    auto* cache = FontCache::getInstance();
+    const auto heavy = w == Weight::semiBold || w == Weight::bold;
+    return juce::Font (juce::FontOptions (heavy ? cache->monoSemiBold : cache->monoRegular).withHeight (height));
 }
 
 juce::Font Fonts::sans (float height, juce::Font::FontStyleFlags style)

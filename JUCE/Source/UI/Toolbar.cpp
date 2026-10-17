@@ -1,6 +1,7 @@
 #include "Toolbar.h"
 #include "Fonts.h"
 #include "Localisation/Text.h"
+#include "Glyphs.h"
 
 namespace StudioPatchbay
 {
@@ -26,8 +27,6 @@ juce::String agoText (juce::Time t)
 
 Toolbar::Toolbar()
 {
-    backButton.setButtonText (juce::String (juce::CharPointer_UTF8 ("\xe2\x97\x80")));
-    forwardButton.setButtonText (juce::String (juce::CharPointer_UTF8 ("\xe2\x96\xb6")));
     clearButton.setButtonText (juce::String (juce::CharPointer_UTF8 ("\xc3\x97")));
     backButton.onClick = [this] { if (onBack) onBack(); };
     forwardButton.onClick = [this] { if (onForward) onForward(); };
@@ -59,9 +58,25 @@ void Toolbar::refreshText()
     repaint();
 }
 
+void Toolbar::ArrowButton::paintButton (juce::Graphics& g, bool over, bool down)
+{
+    getLookAndFeel().drawButtonBackground (g, *this, findColour (buttonColourId), over && isEnabled(), down);
+    const auto size = juce::jmin (getWidth(), getHeight()) * 0.34f;
+    auto arrow = getLocalBounds().toFloat().withSizeKeepingCentre (size * 0.8f, size);
+    if (down)
+        arrow = arrow.translated (1.0f, 1.0f);
+    Glyphs::triangle (g, arrow, pointsRight, isEnabled() ? ink : disabledInk);
+}
+
 void Toolbar::setPalette (const Design::Palette& p)
 {
     pal = p;
+    for (auto* b : { &backButton, &forwardButton })
+    {
+        b->ink = p.ink;
+        b->disabledInk = p.inkSoft.withAlpha (0.4f);
+        b->repaint();
+    }
     refreshText();
 }
 
@@ -121,7 +136,7 @@ void Toolbar::paint (juce::Graphics& g)
     {
         auto cell = area.removeFromLeft (w);
         g.setColour (colour);
-        g.setFont (juce::Font (juce::FontOptions (juce::Font::getDefaultMonospacedFontName(), static_cast<float> (14.0 * uiScale), juce::Font::bold)));
+        g.setFont (Fonts::mono (static_cast<float> (14.0 * uiScale), Fonts::Weight::semiBold));
         g.drawText (juce::String (value), cell.removeFromTop (cell.getHeight() / 2 + sc (2)), juce::Justification::centredBottom);
         g.setColour (pal.inkSoft);
         g.setFont (Fonts::sans (static_cast<float> (9.5 * uiScale)));
@@ -202,7 +217,7 @@ void ViewBar::setContentScale (double s)
 void ViewBar::paint (juce::Graphics& g)
 {
     g.setColour (pal.ink);
-    g.setFont (juce::Font (juce::FontOptions (juce::Font::getDefaultMonospacedFontName(), static_cast<float> (11.0 * uiScale), juce::Font::plain)));
+    g.setFont (Fonts::mono (static_cast<float> (11.0 * uiScale)));
     g.drawText (juce::String (juce::roundToInt (contentScale * 100)) + "%", percentArea, juce::Justification::centred);
 
     if (statusArea.isEmpty())

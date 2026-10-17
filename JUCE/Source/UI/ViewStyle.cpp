@@ -7,7 +7,7 @@ namespace StudioPatchbay
 
 juce::Font ViewStyle::mono (float logical) const
 {
-    return juce::Font (juce::FontOptions (juce::Font::getDefaultMonospacedFontName(), logical * k(), juce::Font::plain));
+    return Fonts::mono (logical * k());
 }
 
 juce::Colour ViewStyle::typeColour (ParsedDevice::Type type) const

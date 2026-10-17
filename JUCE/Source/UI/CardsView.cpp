@@ -1,6 +1,7 @@
 #include "CardsView.h"
 #include "DeviceStyle.h"
 #include "Localisation/Text.h"
+#include "Glyphs.h"
 
 #include <set>
 
@@ -180,9 +181,18 @@ int CardsView::card (juce::Graphics* g, const ParsedDevice& d, juce::Rectangle<i
         y += height;
     };
 
-    const auto warn = juce::String (juce::CharPointer_UTF8 ("\xe2\x9a\xa0 "));
+    const auto warning = [&] (const juce::String& text)
+    {
+        if (g != nullptr)
+        {
+            g->setColour (s.warning());
+            g->setFont (typeFont);
+            Glyphs::line (*g, Glyphs::Kind::warning, s.warning(), s.warning(), text, { inner.getX(), y, inner.getWidth(), s.px (16) });
+        }
+        y += s.px (16);
+    };
     if (d.allChannels().empty())
-        line (warn + tr ("cards.noChannels"), s.warning(), typeFont, s.px (16));
+        warning (tr ("cards.noChannels"));
     else if (d.type == Type::instrument)
     {
         if (! d.recvChannels.empty())
@@ -233,7 +243,7 @@ int CardsView::card (juce::Graphics* g, const ParsedDevice& d, juce::Rectangle<i
     if (d.hasMismatchedChannels())
     {
         y += s.px (4);
-        line (warn + tr ("cards.mismatch"), s.warning(), typeFont, s.px (16));
+        warning (tr ("cards.mismatch"));
     }
     return y + pad - area.getY();
 }

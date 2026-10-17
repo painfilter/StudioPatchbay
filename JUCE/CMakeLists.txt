@@ -50,6 +50,8 @@ juce_add_binary_data(StudioPatchbayAssets
         Resources/Fonts/IBMPlexSans-Medium.ttf
         Resources/Fonts/IBMPlexSans-SemiBold.ttf
         Resources/Fonts/IBMPlexSans-Bold.ttf
+        Resources/Fonts/IBMPlexMono-Regular.ttf
+        Resources/Fonts/IBMPlexMono-SemiBold.ttf
         Resources/Brand/StudioPatchbayIcon.png
         Resources/Brand/PainfilterStackedLight.svg
         Resources/Brand/PainfilterStackedDark.svg
@@ -93,6 +95,7 @@ set(SP_SOURCES
     Source/UI/ViewSwitcher.cpp
     Source/UI/Sidebar.cpp
     Source/UI/Toolbar.cpp
+    Source/UI/Glyphs.cpp
     Source/UI/ViewStyle.cpp
     Source/UI/PatchbayView.cpp
     Source/UI/CardsView.cpp
@@ -145,6 +148,7 @@ target_sources(StudioPatchbayTests PRIVATE
     Tests/LocalisationTests.cpp
     Tests/PhysicalDeviceTests.cpp
     Tests/ViewModelTests.cpp
+    Tests/FontCoverageTests.cpp
     ${SP_CORE_SOURCES}
 )
 target_include_directories(StudioPatchbayTests PRIVATE Source)
@@ -184,5 +188,6 @@ set_source_files_properties(
     Tests/LocalisationTests.cpp
     Tests/PhysicalDeviceTests.cpp
     Tests/ViewModelTests.cpp
+    Tests/FontCoverageTests.cpp
     PROPERTIES COMPILE_OPTIONS "${SP_WARNING_FLAGS}"
 )

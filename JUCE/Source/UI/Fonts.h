@@ -21,6 +21,10 @@ struct Fonts
     static juce::Font sans (float height, Weight = Weight::regular);
     static juce::Font sans (float height, juce::Font::FontStyleFlags);
 
+    // IBM Plex Mono for numbers and channel labels (regular, or semi-bold for
+    // the two heavier weights). Never the system's monospaced font.
+    static juce::Font mono (float height, Weight = Weight::regular);
+
     // Route the chrome's fonts and a LookAndFeel's default sans-serif family
     // through Plex, so everything the look and feel draws uses the bundled face.
     static void applyTo (juce::LookAndFeel&);

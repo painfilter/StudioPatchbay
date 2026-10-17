@@ -11,7 +11,12 @@ namespace
 using Text::tr;
 using Menu = OS9MenuBar::Menu;
 
-const juce::String commandKey (juce::CharPointer_UTF8 ("\xe2\x8c\x98"));
+// The bundled font has no command-key symbol, so the modifier is spelled out.
+#if JUCE_MAC
+const juce::String commandKey ("Cmd+");
+#else
+const juce::String commandKey ("Ctrl+");
+#endif
 
 juce::PopupMenu::Item item (int id, const juce::String& text, const juce::String& shortcut = {},
                             bool ticked = false, bool enabled = true)

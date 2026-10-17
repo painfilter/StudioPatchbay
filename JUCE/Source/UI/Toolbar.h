@@ -12,6 +12,17 @@ namespace StudioPatchbay
 // patchbay; Escape clears).
 class Toolbar : public juce::Component
 {
+    // A Platinum button with a drawn arrow; faint while there is nowhere to go.
+    class ArrowButton : public juce::TextButton
+    {
+    public:
+        explicit ArrowButton (bool right) : pointsRight (right) {}
+        void paintButton (juce::Graphics&, bool over, bool down) override;
+        juce::Colour ink, disabledInk;
+    private:
+        bool pointsRight;
+    };
+
 public:
     Toolbar();
 
@@ -37,7 +48,8 @@ private:
 
     Design::Palette pal = Design::lightPalette();
     double uiScale = 1.0;
-    juce::TextButton backButton, forwardButton, matchesButton, clearButton;
+    ArrowButton backButton { false }, forwardButton { true };
+    juce::TextButton matchesButton, clearButton;
     juce::TextEditor search;
     int instruments = 0, fxDevices = 0, channels = 0, matches = 0;
     bool hasData = false;

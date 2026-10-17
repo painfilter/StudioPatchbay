@@ -1,6 +1,7 @@
 #include "DeviceEditor.h"
 #include "UI/DeviceStyle.h"
 #include "Localisation/Text.h"
+#include "UI/Glyphs.h"
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
@@ -268,8 +269,7 @@ void DeviceEditor::paint (juce::Graphics& g)
         g.drawText (tr ("devices.conflictsHeading"), notes.removeFromTop (18), juce::Justification::centredLeft);
         g.setFont (Fonts::sans (11.5f, Fonts::Weight::regular));
         for (const auto& line : conflictLines)
-            g.drawText (juce::String (juce::CharPointer_UTF8 ("\xe2\x9a\xa0 ")) + line, notes.removeFromTop (16),
-                        juce::Justification::centredLeft);
+            Glyphs::line (g, Glyphs::Kind::warning, juce::Colour (0xffd08a00), pal.ink, line, notes.removeFromTop (16));
     }
 }
 

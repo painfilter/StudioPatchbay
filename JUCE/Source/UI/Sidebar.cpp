@@ -1,6 +1,7 @@
 #include "Sidebar.h"
 #include "Fonts.h"
 #include "Localisation/Text.h"
+#include "Glyphs.h"
 
 namespace StudioPatchbay
 {
@@ -110,8 +111,7 @@ void Sidebar::paint (juce::Graphics& g)
             case Row::Kind::note:
                 g.setColour (pal.inkSoft);
                 g.setFont (Fonts::sans (static_cast<float> (11.0 * uiScale)));
-                g.drawText (juce::String (juce::CharPointer_UTF8 ("\xe2\x9a\xa0 ")) + tr ("sidebar.noInstallations"),
-                            area, juce::Justification::centredLeft);
+                Glyphs::line (g, Glyphs::Kind::warning, juce::Colour (0xffd08a00), pal.inkSoft, tr ("sidebar.noInstallations"), area);
                 break;
             case Row::Kind::installation:
             {
