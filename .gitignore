@@ -34,8 +34,8 @@ xcuserdata/
 ExportOptions.plist
 
 # Release artifacts
-dist/
-export/
+/dist/
+/export/
 *.dmg
 *.zip
 

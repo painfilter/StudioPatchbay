@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, os9-rework]
   pull_request:
   workflow_dispatch:
 
@@ -42,3 +42,67 @@ jobs:
             -destination 'generic/platform=macOS' \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+  # ---------------------------------------------------------------------------
+  # JUCE version (JUCE/).
+
+  # Parser, path and export-format tests. juce_core only, no window system,
+  # so this is the fast job and the one that must stay green.
+  juce-tests:
+    name: JUCE parser tests (Linux)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install JUCE build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build \
+            libfreetype-dev libfontconfig1-dev libx11-dev libxrandr-dev \
+            libxinerama-dev libxcursor-dev libxext-dev libxcomposite-dev libasound2-dev
+      - name: Configure
+        run: cmake -S JUCE -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build tests
+        run: cmake --build build --target StudioPatchbayTests
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  juce-macos:
+    name: JUCE app (macOS, universal)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Configure
+        run: cmake -S JUCE -B build -G Xcode
+      - name: Build
+        run: cmake --build build --config Release -- -quiet CODE_SIGNING_ALLOWED=NO
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Check architectures
+        run: lipo -info "build/StudioPatchbay_artefacts/Release/StudioPatchbay.app/Contents/MacOS/StudioPatchbay"
+      - name: Package (unsigned)
+        run: ditto -c -k --keepParent build/StudioPatchbay_artefacts/Release/StudioPatchbay.app StudioPatchbay-macOS-unsigned.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StudioPatchbay-macOS-unsigned
+          path: StudioPatchbay-macOS-unsigned.zip
+          retention-days: 14
+
+  juce-windows:
+    name: JUCE app (Windows, x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Configure
+        run: cmake -S JUCE -B build -A x64
+      - name: Build
+        run: cmake --build build --config Release --parallel
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Package (unsigned)
+        shell: pwsh
+        run: Compress-Archive -Path build/StudioPatchbay_artefacts/Release/StudioPatchbay.exe -DestinationPath StudioPatchbay-Windows-x64-unsigned.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StudioPatchbay-Windows-x64-unsigned
+          path: StudioPatchbay-Windows-x64-unsigned.zip
+          retention-days: 14

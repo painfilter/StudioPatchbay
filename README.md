@@ -76,6 +76,26 @@ swift test
 `ControlRoomParser`. The app itself is still built from the Xcode project. CI
 runs the same `swift test` on every push.
 
+## Cross-platform version (JUCE, macOS and Windows)
+
+The `JUCE/` folder holds a C++ rewrite of the app on [JUCE](https://juce.com)
+with a classic Mac OS 9 "Platinum" interface. It runs on macOS and Windows and
+will replace the Swift app once it is complete.
+
+Requirements: CMake 3.24 or later and a C++20 compiler (Xcode on macOS,
+Visual Studio 2022 on Windows). JUCE and Catch2 are downloaded by CMake.
+
+```bash
+cmake -S JUCE -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+ctest --test-dir build -C Release --output-on-failure
+```
+
+Cubase's preferences are read from `~/Library/Preferences/Cubase NN/` on macOS
+and `%APPDATA%\Steinberg\Cubase NN_64\` on Windows (version 12 or later).
+**File > Export as PDF/PNG** saves the current view in full, including the
+parts scrolled out of sight.
+
 ## Why no sandbox?
 
 The app reads `~/Library/Preferences/Cubase NN/External Plugins.xml` directly.
@@ -110,6 +130,16 @@ your own `External Plugins.xml` is worth more than any description.
 
 MIT, see [LICENSE](LICENSE). Free to use, modify and share. This is a casually
 maintained side project, so please be patient with issues and pull requests.
+
+The JUCE version links the [JUCE framework](https://juce.com), which has its own
+licence. StudioPatchbay's own source code stays under MIT, but **an application
+you build yourself from this source combines it with JUCE and therefore falls
+under JUCE's licence terms**: either the
+[AGPLv3](https://www.gnu.org/licenses/agpl-3.0.html) or a
+[commercial JUCE licence](https://juce.com/get-juce/). See JUCE's
+[LICENSE.md](https://github.com/juce-framework/JUCE/blob/master/LICENSE.md).
+The bundled IBM Plex Sans font is licensed under the SIL Open Font License 1.1
+(`JUCE/Resources/Fonts/OFL.txt`).
 
 ## Acknowledgments
 
