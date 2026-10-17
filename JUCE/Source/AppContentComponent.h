@@ -10,6 +10,7 @@
 #include "UI/OS9MenuBar.h"
 #include "UI/AppWindow.h"
 #include "UI/DesktopShelf.h"
+#include "UI/OverlayContent.h"
 
 namespace StudioPatchbay
 {
@@ -23,6 +24,7 @@ namespace StudioPatchbay
 // scales the whole desktop; resizing the native window changes the logical
 // desktop size instead.
 class AppContentComponent : public juce::Component,
+                            public DesktopWindows,
                             private juce::Timer
 {
 public:
@@ -50,7 +52,16 @@ public:
 
     void showAbout();
     void showLicenses();
-    void showMessage (const juce::String& title, const juce::String& message);
+    void showMessage (const juce::String& title, const juce::String& message) override;
+
+    // Opens a window on the desktop holding the content (logical size w x h),
+    // above any already open. The content's close() closes it.
+    OverlayContent& openWindow (const juce::String& title, std::unique_ptr<OverlayContent>, int w, int h) override;
+    void confirm (const juce::String& headline, const juce::String& detail,
+                  const juce::String& actionText, std::function<void()> action) override;
+
+    // The Converters & Interfaces window; brought forward if already open.
+    void showDeviceManager();
 
     // The smallest logical desktop the window layout works in.
     static constexpr int minimumWidth = 760;
@@ -73,6 +84,13 @@ private:
     Design::AboutDialog about;
     Design::MessageDialog message;
     std::unique_ptr<Design::OverlayWindow> licenses;
+    std::vector<std::unique_ptr<Design::OverlayWindow>> windows;
+
+    juce::TooltipWindow tooltips { this, 600 };
+
+    // Window content is laid out in logical pixels and scaled by its window,
+    // so its controls draw at zoom 1: a look and feel of their own.
+    Design::PlatinumLookAndFeel contentLaf;
 
     Design::Palette pal = Design::darkPalette();
     bool darkMode = true;

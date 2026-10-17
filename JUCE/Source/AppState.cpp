@@ -5,7 +5,41 @@ namespace StudioPatchbay
 
 AppState::AppState (int preferredCubaseVersion) : preferredVersion (preferredCubaseVersion)
 {
+    deviceStore.load();
     rescanInstallations();
+}
+
+// ============================================================================
+// Physical devices and port labels
+// ============================================================================
+
+void AppState::addPhysicalDevice (const PhysicalDevice& d)        { deviceStore.add (d); sendChangeMessage(); }
+void AppState::updatePhysicalDevice (const PhysicalDevice& d)     { deviceStore.update (d); sendChangeMessage(); }
+void AppState::deletePhysicalDevice (const juce::Uuid& id)        { deviceStore.remove (id); sendChangeMessage(); }
+void AppState::replaceAllPhysicalDevices (const std::vector<PhysicalDevice>& d) { deviceStore.replaceAll (d); sendChangeMessage(); }
+void AppState::addPhysicalDevices (const std::vector<PhysicalDevice>& d)        { deviceStore.addImported (d); sendChangeMessage(); }
+
+PhysicalDevice AppState::duplicatePhysicalDevice (const PhysicalDevice& d)
+{
+    auto copy = deviceStore.duplicate (d);
+    sendChangeMessage();
+    return copy;
+}
+
+void AppState::setPortLabel (const AudioPort& port, const juce::String& label)
+{
+    deviceStore.setLabel (AudioPorts::stableLabelKey (port), label);
+    rebuildAudioPorts();
+    sendChangeMessage();
+}
+
+void AppState::rebuildAudioPorts()
+{
+    // A Port Setup that reads as empty keeps the last good ports.
+    if (detectedPorts.empty())
+        return;
+    audioPorts = AudioPorts::build (detectedPorts);
+    AudioPorts::applyLabels (audioPorts, deviceStore.getLabels());
 }
 
 // ============================================================================
@@ -53,6 +87,8 @@ void AppState::selectInstallation (int index)
 
 void AppState::show (int index)
 {
+    if (index != selectedIndex)
+        audioPorts.clear();   // another installation's ports do not apply
     if (index < 0 || index >= static_cast<int> (installations.size()))
     {
         selectedIndex = -1;
@@ -111,6 +147,7 @@ void AppState::parseSelectedInstallation()
     {
         detectedPorts.clear();
     }
+    rebuildAudioPorts();
 
     // Parse Control Room.
     auto crFile = inst->controlRoomXml();

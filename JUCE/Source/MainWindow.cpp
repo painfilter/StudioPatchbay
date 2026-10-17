@@ -36,7 +36,8 @@ enum : int
     zoomFirstId = 100,
     languageSystemId = 200, languageEnglishId, languageGermanId,
     appearanceSystemId = 210, appearanceLightId, appearanceDarkId,
-    aboutId = 300, licensesId
+    aboutId = 300, licensesId,
+    devicesId = 400
 };
 } // namespace
 
@@ -246,6 +247,7 @@ void MainWindow::showMenu (Menu which)
             case appearanceDarkId:   settings.appearance = "dark"; applyAppearance(); break;
             case aboutId:            showAbout(); return;
             case licensesId:         content->showLicenses(); return;
+            case devicesId:          showDeviceManager(); return;
             default:                 return;
         }
         saveSettings();
@@ -298,6 +300,8 @@ juce::PopupMenu MainWindow::optionsMenu()
     menu.addSubMenu (tr ("menu.windowZoom"), zoom);
     menu.addSubMenu (tr ("menu.language"), languages);
     menu.addSubMenu (tr ("menu.appearance"), appearance);
+    menu.addSeparator();
+    menu.addItem (item (devicesId, tr ("menu.devices")));
     return menu;
 }
 
@@ -365,6 +369,13 @@ void MainWindow::forgetRecentExport (const juce::File& file)
 {
     settings.recentExports.removeString (file.getFullPathName());
     saveSettings();
+}
+
+void MainWindow::showDeviceManager()
+{
+    if (content->isShaded())
+        content->setShaded (false);
+    content->showDeviceManager();
 }
 
 void MainWindow::restoreWindow (juce::Rectangle<int> fromIcon)

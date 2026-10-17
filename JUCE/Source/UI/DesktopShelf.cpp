@@ -124,6 +124,7 @@ void DesktopShelf::rebuild()
     for (size_t i = 0; i < installations.size(); ++i)
         addTile ({ Kind::installation, static_cast<int> (i), installations[i].prefsDir, {} }, DesktopIcons::volume);
 
+    addTile ({ Kind::devices, -1, {}, {} }, DesktopIcons::converter);
     addTile ({ Kind::exportPdf, -1, {}, {} }, DesktopIcons::printer);
     addTile ({ Kind::exportPng, -1, {}, {} }, DesktopIcons::camera);
     addTile ({ Kind::watcher, -1, {}, {} },
@@ -163,6 +164,11 @@ void DesktopShelf::updateStates()
                 item.tile->setText (inst.displayName(), inst.xmlExists() ? "" : tr ("desktop.noExternalPlugins"));
                 break;
             }
+            case Kind::devices:
+                item.tile->setText (tr ("devices.title"),
+                                    tr ("desktop.devicesCount").replace ("%COUNT%",
+                                        juce::String (static_cast<int> (appState.getPhysicalDevices().size()))));
+                break;
             case Kind::exportPdf: item.tile->setText (tr ("desktop.pdfExport"), tr ("desktop.exportDetail")); break;
             case Kind::exportPng: item.tile->setText (tr ("desktop.pngExport"), tr ("desktop.exportDetail")); break;
             case Kind::watcher:
@@ -246,6 +252,7 @@ void DesktopShelf::activate (const Item& item)
             if (actions) actions->restoreWindow (from);
             break;
         }
+        case Kind::devices:   if (actions) actions->showDeviceManager(); break;
         case Kind::exportPdf: if (actions) actions->exportView (Export::Format::pdf, actions->currentView()); break;
         case Kind::exportPng: if (actions) actions->exportView (Export::Format::png, actions->currentView()); break;
         case Kind::watcher:   if (actions) actions->reload(); break;
@@ -265,6 +272,9 @@ void DesktopShelf::showMenu (const Item& item)
                 if (actions) actions->restoreWindow (from);
             });
             menu.addItem (tr ("desktop.showPreferencesFolder"), [f = item.file] { f.revealToUser(); });
+            break;
+        case Kind::devices:
+            menu.addItem (tr ("desktop.open"), [this] { if (actions) actions->showDeviceManager(); });
             break;
         case Kind::exportPdf:
         case Kind::exportPng:

@@ -23,13 +23,14 @@ public:
     virtual void forgetRecentExport (const juce::File&) = 0;
     // Opens the window again, zooming out of the given icon (desktop coordinates).
     virtual void restoreWindow (juce::Rectangle<int> fromIcon) = 0;
+    virtual void showDeviceManager() = 0;
 };
 
 // The icons on the desktop while the window is collapsed. As on the
 // reference desktop: StudioPatchbay itself at the bottom left (click opens
 // the window again), the trash at the bottom right (opens About), and in a
 // grid from the top left one volume per Cubase installation (click shows
-// that version), the two export programs, the file watcher and the recently
+// that version), Converters & Interfaces, the two export programs, the file watcher and the recently
 // exported documents. Transparent: the desktop pattern is the parent's.
 class DesktopShelf : public juce::Component,
                      private juce::ChangeListener
@@ -54,7 +55,7 @@ public:
     static juce::Rectangle<int> gridSlot (int index, int logicalWidth);
 
 private:
-    enum class Kind { installation, exportPdf, exportPng, watcher, recent };
+    enum class Kind { installation, devices, exportPdf, exportPng, watcher, recent };
 
     struct Item
     {

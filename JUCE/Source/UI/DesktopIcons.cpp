@@ -61,6 +61,27 @@ void volume (juce::Graphics& g, juce::Rectangle<int> area, bool dark)
     g.fillRect (grid.rect (24, 14, 3, 3));
 }
 
+void converter (juce::Graphics& g, juce::Rectangle<int> area, bool dark)
+{
+    const auto grid = gridFor (area);
+    const auto p = palette (dark);
+    // A rack unit with a row of sockets, and a cable leaving the first one.
+    const auto body = grid.rect (2, 11, 28, 12);
+    shadowUnder (g, grid, body);
+    bevelBox (g, grid, body, p);
+    g.setColour (p.ink);
+    for (int i = 0; i < 4; ++i)
+        g.drawEllipse (grid.rect (5.0f + 5.0f * i, 14.5f, 3.5f, 3.5f), grid.line());
+    g.setColour (p.selection);
+    g.fillRect (grid.rect (25, 15, 3, 3));
+    juce::Path cable;
+    cable.startNewSubPath (grid.rect (6.75f, 14.5f, 0, 0).getPosition());
+    cable.cubicTo (grid.rect (6.75f, 6, 0, 0).getPosition(), grid.rect (15, 2, 0, 0).getPosition(),
+                   grid.rect (24, 4, 0, 0).getPosition());
+    g.setColour (p.ink);
+    g.strokePath (cable, juce::PathStrokeType (grid.line() * 1.5f));
+}
+
 void printer (juce::Graphics& g, juce::Rectangle<int> area, bool dark)
 {
     const auto grid = gridFor (area);

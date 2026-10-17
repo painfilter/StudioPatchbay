@@ -68,6 +68,9 @@ set(SP_CORE_SOURCES
     Source/Model/PlatformPaths.cpp
     Source/Export/PdfWriter.cpp
     Source/Model/AppSettings.cpp
+    Source/Model/PhysicalDevice.cpp
+    Source/Model/AudioPorts.cpp
+    Source/Model/DeviceStore.cpp
 )
 
 set(SP_SOURCES
@@ -77,6 +80,10 @@ set(SP_SOURCES
     Source/Workspace.cpp
     Source/Localisation/Text.cpp
     Source/UI/AppWindow.cpp
+    Source/UI/DeviceStyle.cpp
+    Source/UI/Devices/DeviceManager.cpp
+    Source/UI/Devices/DeviceEditor.cpp
+    Source/UI/Devices/ImportReview.cpp
     Source/AppState.cpp
     Source/UI/Fonts.cpp
     Source/UI/OS9MenuBar.cpp
@@ -115,6 +122,7 @@ target_link_libraries(StudioPatchbay
     PRIVATE
         StudioPatchbayAssets
         juce::juce_gui_basics
+        juce::juce_gui_extra
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
@@ -132,6 +140,7 @@ target_sources(StudioPatchbayTests PRIVATE
     Tests/PdfWriterTests.cpp
     Tests/AppSettingsTests.cpp
     Tests/LocalisationTests.cpp
+    Tests/PhysicalDeviceTests.cpp
     ${SP_CORE_SOURCES}
 )
 target_include_directories(StudioPatchbayTests PRIVATE Source)
@@ -169,5 +178,6 @@ set_source_files_properties(
     Tests/PdfWriterTests.cpp
     Tests/AppSettingsTests.cpp
     Tests/LocalisationTests.cpp
+    Tests/PhysicalDeviceTests.cpp
     PROPERTIES COMPILE_OPTIONS "${SP_WARNING_FLAGS}"
 )

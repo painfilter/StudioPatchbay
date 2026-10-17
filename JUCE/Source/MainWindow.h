@@ -45,6 +45,7 @@ private:
     void showAbout() override;
     void forgetRecentExport (const juce::File&) override;
     void restoreWindow (juce::Rectangle<int> fromIcon) override;
+    void showDeviceManager() override;
 
     void darkModeSettingChanged() override;
 

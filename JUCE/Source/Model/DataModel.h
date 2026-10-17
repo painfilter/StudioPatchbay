@@ -62,8 +62,14 @@ struct ParsedDevice
     }
 
     int channelCount() const { return static_cast<int> (allChannels().size()); }
-    bool isStereo()    const { return channelCount() == 2; }
-    bool isMono()      const { return channelCount() == 1; }
+
+    // As in the Swift app: per direction, so a device with two send and two
+    // receive channels on different numbers is still stereo.
+    bool isStereo() const { return recvChannels.size() == 2 || sendChannels.size() == 2; }
+    bool isMono() const
+    {
+        return channelCount() == 1 || (recvChannels.size() == 1 && sendChannels.size() <= 1);
+    }
 
     bool hasMismatchedChannels() const
     {
@@ -103,6 +109,16 @@ struct ParsedDevices
         return result;
     }
 
+    // Every device on a channel in one direction; a channel can carry several.
+    std::map<int, std::vector<ParsedDevice>> devicesByChannel (ChannelDirection dir) const
+    {
+        std::map<int, std::vector<ParsedDevice>> result;
+        for (auto& d : all())
+            for (auto ch : (dir == ChannelDirection::send) ? d.sendChannels : d.recvChannels)
+                result[ch].push_back (d);
+        return result;
+    }
+
     int usedChannelCount() const
     {
         std::set<int> channels;
@@ -137,22 +153,9 @@ struct DetectedPort
 };
 
 // ============================================================================
-// PhysicalDevice – user-configured hardware converter/interface
+// PhysicalDevice – user-configured converter, audio interface or other
+// hardware; defined in PhysicalDevice.h
 // ============================================================================
-
-struct PhysicalDevice
-{
-    juce::Uuid id;
-    juce::String name;
-    juce::String shortName;
-    ConnectorType portColor = ConnectorType::other;
-    DeviceType deviceType = DeviceType::other;
-    int physicalChannelCount = 0;
-    int sendChannelStart = 0;
-    int recvChannelStart = 0;
-    DeviceDirectionality directionality = DeviceDirectionality::bidirectional;
-    juce::String customColorHex;
-};
 
 // ============================================================================
 // ControlRoomBus – one Control Room output bus

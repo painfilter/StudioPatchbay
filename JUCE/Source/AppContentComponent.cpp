@@ -1,7 +1,10 @@
 #include "AppContentComponent.h"
 #include "UI/Fonts.h"
+#include "UI/Devices/DeviceManager.h"
 #include "Localisation/Text.h"
 #include "BinaryData.h"
+
+#include <algorithm>
 
 namespace StudioPatchbay
 {
@@ -65,6 +68,7 @@ AppContentComponent::AppContentComponent (int preferredCubaseVersion)
              logo (BinaryData::PainfilterStackedDark_svg, BinaryData::PainfilterStackedDark_svgSize)),
       message ([this] { message.setVisible (false); })
 {
+    Fonts::applyTo (contentLaf);
     addAndMakeVisible (appWindow);
     addAndMakeVisible (menuBar);
     addChildComponent (desktop);
@@ -79,6 +83,8 @@ AppContentComponent::AppContentComponent (int preferredCubaseVersion)
 
 AppContentComponent::~AppContentComponent()
 {
+    windows.clear();   // their content uses contentLaf
+    licenses.reset();
     appState.removeChangeListener (&titleWatcher);
 }
 
@@ -151,6 +157,8 @@ void AppContentComponent::resized()
                                       static_cast<juce::Component*> (&message),
                                       static_cast<juce::Component*> (licenses.get()) })
         overlay->setBounds (getLocalBounds());
+    for (auto& w : windows)
+        w->setBounds (getLocalBounds());
 }
 
 // ============================================================================
@@ -174,6 +182,8 @@ void AppContentComponent::setShaded (bool shouldBeShaded, juce::Rectangle<int> i
         about.setVisible (false);
         message.setVisible (false);
         licenses->setVisible (false);
+        for (auto& w : windows)
+            w->setVisible (false);   // back with the window
         shaded = true;
         appWindow.setVisible (false);
         desktop.setVisible (true);
@@ -203,6 +213,11 @@ void AppContentComponent::finishAnimation()
         shaded = false;
         desktop.setVisible (false);
         appWindow.setVisible (true);
+        for (auto& w : windows)
+        {
+            w->setVisible (true);
+            w->toFront (false);
+        }
         menuBar.setShaded (false);
         if (onShadedChanged)
             onShadedChanged (false);
@@ -244,6 +259,59 @@ void AppContentComponent::showLicenses()
     licenses->grabKeyboardFocus();
 }
 
+OverlayContent& AppContentComponent::openWindow (const juce::String& title, std::unique_ptr<OverlayContent> content,
+                                                int w, int h)
+{
+    auto& c = *content;
+    auto window = std::make_unique<Design::OverlayWindow> (title, std::move (content), w, h);
+    auto* raw = window.get();
+    raw->onClose = [&c] { c.closeRequested(); };
+    raw->setCloseTooltip (tr ("action.close"));
+    c.close = [this, raw]
+    {
+        raw->setVisible (false);
+        // Deferred: the request usually comes from inside the window itself.
+        juce::MessageManager::callAsync ([safe = juce::Component::SafePointer<AppContentComponent> (this), raw]
+        {
+            if (safe == nullptr)
+                return;
+            auto& list = safe->windows;
+            list.erase (std::remove_if (list.begin(), list.end(),
+                                        [raw] (const auto& w) { return w.get() == raw; }), list.end());
+        });
+    };
+    c.setLookAndFeel (&contentLaf);
+    c.setPalette (pal);
+    raw->setDarkMode (darkMode);
+    raw->setUiScale (uiScale);
+    raw->setBounds (getLocalBounds());
+    addAndMakeVisible (*raw);
+    raw->toFront (true);
+    raw->grabKeyboardFocus();
+    windows.push_back (std::move (window));
+    return c;
+}
+
+void AppContentComponent::showDeviceManager()
+{
+    for (auto& w : windows)
+        if (dynamic_cast<DeviceManager*> (w->getContent()) != nullptr)
+        {
+            w->toFront (true);
+            return;
+        }
+    openWindow (tr ("devices.title"), std::make_unique<DeviceManager> (appState, *this),
+                DeviceManager::width, DeviceManager::height);
+}
+
+void AppContentComponent::confirm (const juce::String& headline, const juce::String& detail,
+                                   const juce::String& actionText, std::function<void()> action)
+{
+    openWindow ({}, std::make_unique<ConfirmContent> (headline, detail, tr ("action.cancel"), actionText,
+                                                      std::move (action)),
+                ConfirmContent::width, ConfirmContent::height);
+}
+
 void AppContentComponent::showMessage (const juce::String& title, const juce::String& text)
 {
     message.setContent (title, text, tr ("action.ok"), tr ("action.close"));
@@ -260,6 +328,7 @@ void AppContentComponent::setDarkMode (bool dark)
 {
     darkMode = dark;
     pal = dark ? Design::darkPalette() : Design::lightPalette();
+    contentLaf.setDarkMode (dark);
     menuBar.setPalette (pal);
     appWindow.setPalette (pal);
     workspace.setPalette (pal);
@@ -267,6 +336,12 @@ void AppContentComponent::setDarkMode (bool dark)
     about.setDarkMode (dark);
     message.setDarkMode (dark);
     licenses->setDarkMode (dark);
+    for (auto& w : windows)
+    {
+        w->setDarkMode (dark);
+        if (auto* c = dynamic_cast<OverlayContent*> (w->getContent()))
+            c->setPalette (pal);
+    }
     if (auto* text = dynamic_cast<LicenseText*> (licenses->getContent()))
     {
         text->text.setColour (juce::TextEditor::backgroundColourId, pal.field);
@@ -287,6 +362,8 @@ void AppContentComponent::setUiScale (double scale)
     about.setUiScale (scale);
     message.setUiScale (scale);
     licenses->setUiScale (scale);
+    for (auto& w : windows)
+        w->setUiScale (scale);
     resized();
     repaint();
 }
@@ -304,6 +381,7 @@ void AppContentComponent::refreshText()
         auto window = std::make_unique<Design::OverlayWindow> (tr ("label.thirdPartyLicenses"),
                                                                std::make_unique<LicenseText>(), 560, 380);
         window->onClose = [this] { licenses->setVisible (false); };
+        window->getContent()->setLookAndFeel (&contentLaf);
         window->setCloseTooltip (tr ("action.close"));
         window->setVisible (wasVisible);
         return window;

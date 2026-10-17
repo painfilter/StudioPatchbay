@@ -35,6 +35,19 @@ for tests; Cubase does not run there).
   logical desktop size and resizes the window; dragging the window edge keeps
   the zoom. Settings file v2 (appearance, language, window size, last Cubase
   version; v1 `darkMode` is migrated).
+- **Converters & Interfaces (stage 2):** `Model/PhysicalDevice`, `Model/AudioPorts`,
+  `Model/DeviceStore` read and write `physicalDevices.json` and `portLabels.json`
+  in the Swift app's format and folder (both apps share one setup; old numeric
+  ids and missing later keys load as in Swift). Ports are built from Port Setup
+  by family with send/receive runs paired by position; labels use the
+  `family@channel` key with the two older key forms as fallback. The window
+  (`UI/Devices/`, Options menu or desktop icon) lists devices by type with a
+  filter, edits with free start channels only and a conflict check, duplicates,
+  deletes, removes all, exports and imports (review with the same conflict
+  rule), shows and copies the save file path, and lists the detected ports with
+  a Cubase version switch and optional interface names. Improvements over
+  Swift: a new device starts on free channels; an unreadable devices file is
+  set aside before the next save instead of being overwritten.
 - **Texts:** `JUCE/Resources/Localization/StudioPatchbay.<lang>.json` (product)
   and `common.<lang>.json` (generated, do not edit).
 - **Look and feel:** `JUCE/Source/Design/` is generated; do not edit by hand.
@@ -46,13 +59,15 @@ for tests; Cubase does not run there).
 Catch2, run by `ctest`: parsers, Cubase folder detection (both platform
 spellings), app data directory, PDF writer (structure, xref offsets, pixel
 round-trip), settings (v1 migration, round trip, newer files untouched),
-texts (English and German have the same keys; every key the code uses exists).
+texts (English and German have the same keys; every key the code uses exists),
+physical devices (ownership per direction, range labels, conflicts, import
+check, free start channels, reading a Swift-written file), ports (pairing,
+label fallbacks), device store (first launch, labels, unreadable file).
 
 ### Remaining Work / Next Tasks
 1. Manual test on a real Cubase setup on macOS and on Windows (detection,
    live reload, export, dark/light, every zoom level).
-2. Stage 2: physical device model 1:1 with the Swift app (same JSON files) and
-   the Converters & Interfaces window. Stage 3: views 1:1 (patchbay by port and
+2. Stage 3: views 1:1 (patchbay by port and
    device, filter, search with jump, back/forward, content zoom). Stage 4:
    export as in the Swift app (patchbay with "Connected" table).
 3. Release packaging: macOS signing + notarisation (`packaging/release.sh` is

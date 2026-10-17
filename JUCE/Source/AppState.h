@@ -4,6 +4,8 @@
 #include "Model/CubaseConfigParser.h"
 #include "Model/PlatformPaths.h"
 #include "Model/FileWatcher.h"
+#include "Model/DeviceStore.h"
+#include "Model/AudioPorts.h"
 
 #include <juce_core/juce_core.h>
 #include <juce_events/juce_events.h>
@@ -45,6 +47,21 @@ public:
     const std::vector<DetectedPort>& getDetectedPorts() const { return detectedPorts; }
     const std::vector<ControlRoomBus>& getControlRoomBuses() const { return controlRoomBuses; }
 
+    // The interface's ports from Port Setup, with the user's labels.
+    const std::vector<AudioPort>& getAudioPorts() const { return audioPorts; }
+
+    // --- Physical devices (converters, interfaces), shared with the Swift app ---
+
+    const std::vector<PhysicalDevice>& getPhysicalDevices() const { return deviceStore.getDevices(); }
+    const DeviceStore& getDeviceStore() const { return deviceStore; }
+    void addPhysicalDevice (const PhysicalDevice&);
+    void updatePhysicalDevice (const PhysicalDevice&);
+    void deletePhysicalDevice (const juce::Uuid&);
+    PhysicalDevice duplicatePhysicalDevice (const PhysicalDevice&);
+    void replaceAllPhysicalDevices (const std::vector<PhysicalDevice>&);
+    void addPhysicalDevices (const std::vector<PhysicalDevice>&);   // imported, new ids
+    void setPortLabel (const AudioPort&, const juce::String& label);
+
     // --- File watching ---
 
     bool isWatching() const { return fileWatcher.isWatching(); }
@@ -58,6 +75,7 @@ public:
 
 private:
     void show (int index);
+    void rebuildAudioPorts();
     void parseSelectedInstallation();
     void onFilesChanged();
 
@@ -68,6 +86,8 @@ private:
     ParsedDevices parsedDevices;
     std::vector<DetectedPort> detectedPorts;
     std::vector<ControlRoomBus> controlRoomBuses;
+    std::vector<AudioPort> audioPorts;
+    DeviceStore deviceStore;
 
     FileWatcher fileWatcher;
     juce::String errorMessage;
